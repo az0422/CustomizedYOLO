@@ -19,6 +19,21 @@ def autopad(k, p=None, d=1):  # kernel, padding, dilation
         p = k // 2 if isinstance(k, int) else [x // 2 for x in k]  # auto-pad
     return p
 
+class Groups(nn.Module):
+    def __init__(self, groups=2, group_id=0, dimension=1):
+        super().__init__()
+        self.groups = groups
+        self.group_id = group_id
+        self.dimension=dimension
+
+    def forward(self, x):
+        return x.chunk(self.groups, self.dimension)[self.group_id]
+
+class Shortcut(nn.Module):
+    def __init__(self):
+        super().__init__()
+    def forward(self, x):
+        return x[0] + x[1]
 
 class Conv(nn.Module):
     # Standard convolution with args(ch_in, ch_out, kernel, stride, padding, groups, dilation, activation)
