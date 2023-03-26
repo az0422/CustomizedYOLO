@@ -346,7 +346,7 @@ class SPPCSP(nn.Module):
         self.cv5 = Conv(4 * c_, c_, 1, 1)
         self.cv6 = Conv(c_, c_, 3, 1)
         self.bn = nn.BatchNorm2d(2 * c_) 
-        self.act = Mish()
+        self.act = nn.SiLU()
         self.cv7 = Conv(2 * c_, c2, 1, 1)
 
     def forward(self, x):
