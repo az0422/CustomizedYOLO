@@ -3,16 +3,16 @@
 Run prediction on images, videos, directories, globs, YouTube, webcam, streams, etc.
 
 Usage - sources:
-    $ yolo mode=predict model=yolov8n.pt --source 0                               # webcam
-                                                  img.jpg                         # image
-                                                  vid.mp4                         # video
-                                                  screen                          # screenshot
-                                                  path/                           # directory
-                                                  list.txt                        # list of images
-                                                  list.streams                    # list of streams
-                                                  'path/*.jpg'                    # glob
-                                                  'https://youtu.be/Zgi9g1ksQHc'  # YouTube
-                                                  'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
+    $ yolo mode=predict model=yolov8n.pt source=0                               # webcam
+                                                img.jpg                         # image
+                                                vid.mp4                         # video
+                                                screen                          # screenshot
+                                                path/                           # directory
+                                                list.txt                        # list of images
+                                                list.streams                    # list of streams
+                                                'path/*.jpg'                    # glob
+                                                'https://youtu.be/Zgi9g1ksQHc'  # YouTube
+                                                'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 
 Usage - formats:
     $ yolo mode=predict model=yolov8n.pt                 # PyTorch
@@ -28,7 +28,6 @@ Usage - formats:
                               yolov8n_paddle_model       # PaddlePaddle
 """
 import platform
-from collections import defaultdict
 from pathlib import Path
 
 import cv2
@@ -75,7 +74,7 @@ class BasePredictor:
         data_path (str): Path to data.
     """
 
-    def __init__(self, cfg=DEFAULT_CFG, overrides=None):
+    def __init__(self, cfg=DEFAULT_CFG, overrides=None, _callbacks=None):
         """
         Initializes the BasePredictor class.
 
@@ -104,7 +103,7 @@ class BasePredictor:
         self.data_path = None
         self.source_type = None
         self.batch = None
-        self.callbacks = defaultdict(list, callbacks.default_callbacks)  # add callbacks
+        self.callbacks = _callbacks if _callbacks else callbacks.get_default_callbacks()
         callbacks.add_integration_callbacks(self)
 
     def preprocess(self, img):
@@ -246,6 +245,7 @@ class BasePredictor:
                                  dnn=self.args.dnn,
                                  data=self.args.data,
                                  fp16=self.args.half,
+                                 fuse=True,
                                  verbose=verbose)
         self.device = device
         self.model.eval()
@@ -282,3 +282,9 @@ class BasePredictor:
     def run_callbacks(self, event: str):
         for callback in self.callbacks.get(event, []):
             callback(self)
+
+    def add_callback(self, event: str, func):
+        """
+        Add callback
+        """
+        self.callbacks[event].append(func)
