@@ -54,6 +54,14 @@ class Conv(nn.Module):
         """Perform transposed convolution of 2D data."""
         return self.act(self.conv(x))
 
+class ResidualBlocks(nn.Module):
+    def __init__(self, c1, c2, n=1):
+        super().__init__()
+        self.conv1 = Conv(c2, c2, 1, 1)
+        self.conv2 = Conv(c2, c2, 3, 1)
+
+    def forward(self, x):
+        return x + self.conv2(self.conv1(x))
 
 class DWConv(Conv):
     """Depth-wise convolution."""
