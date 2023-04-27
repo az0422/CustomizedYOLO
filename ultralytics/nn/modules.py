@@ -89,7 +89,6 @@ class EfficientBlock(nn.Module):
 class EfficientBlocks(nn.Module):
     def __init__(self, c1, c2, n=1, expand=4, ratio=16):
         super().__init__()
-        print(n)
         self.m = nn.Sequential(*[EfficientBlock(c1, c2, expand=expand, ratio=ratio) for _ in range(n)])
  
     def forward(self, x):
