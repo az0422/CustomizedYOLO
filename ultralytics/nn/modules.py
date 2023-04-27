@@ -73,6 +73,27 @@ class ResidualBlocks(nn.Module):
     def forward(self, x):
         return x + self.m(x)
 
+class EfficientBlock(nn.Module):
+    def __init__(self, c1, c2, expand=4, ratio=16):
+        super().__init__()
+        c3 = int(c2 * expand)
+        c4 = c2 // ratio
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
+        self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1, True)
+        self.conv3 = Conv(c3, c4, 1, 1, None, 1, 1, True) # squeeze
+        self.conv4 = Conv(c4, c3, 1, 1, None, 1, 1, nn.Sigmoid())
+        self.conv5 = Conv(c3, c2, 1, 1, None, 1, 1, False)
+
+    def forward(self, x):
+        x1 = self.conv1(x)
+        x2 = self.conv2(x1)
+        x2 = nn.AvgPool2d(3, 1, 1)(x2)
+        x2 = self.conv3(x2)
+        x2 = self.conv4(x2)
+        x2 = x1 + x2
+        x2 = self.conv5(x2)
+        return x2
+
 class DWConv(Conv):
     """Depth-wise convolution."""
 
