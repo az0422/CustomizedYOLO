@@ -478,7 +478,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
 
             args = [c1, c2, *args[1:]]
             if m in (C1, C2, C2f, C3, C3TR, C3Ghost, C3x,
-                     BottleneckCSP, BottleneckCSP2, ResidualBlocks, EfficientBlocks):
+                     BottleneckCSP, BottleneckCSP2, ResidualBlocks):
                 args.insert(2, n)  # number of repeats
                 n = 1
         elif m is nn.BatchNorm2d:
