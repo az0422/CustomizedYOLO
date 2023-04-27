@@ -86,6 +86,15 @@ class EfficientBlock(nn.Module):
     def forward(self, x):
         return x + self.conv4(self.conv3(self.conv2(self.conv1(x))))
 
+class EfficientBlocks(nn.Module):
+    def __init__(self, c1, c2, n=1, expand=4, ratio=16):
+        super().__init__()
+        print(n)
+        self.m = nn.Sequential(*[EfficientBlock(c1, c2, expand=expand, ratio=ratio) for _ in range(n)])
+ 
+    def forward(self, x):
+        return self.m(x)
+
 class DWConv(Conv):
     """Depth-wise convolution."""
 
