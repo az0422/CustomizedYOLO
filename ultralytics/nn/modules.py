@@ -86,7 +86,7 @@ class EfficientBlock(nn.Module):
         self.conv5 = Conv(c1, c2, 1, stride, None, 1, 1, True)
 
     def forward(self, x):
-        return Shortcut()([self.conv5(x), self.conv4(self.conv3(self.conv2(self.conv1(x))))])
+        return self.conv5(x) + self.conv4(self.conv3(self.conv2(self.conv1(x))))
 
 class DWConv(Conv):
     """Depth-wise convolution."""
