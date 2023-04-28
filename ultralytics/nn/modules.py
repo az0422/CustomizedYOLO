@@ -81,12 +81,12 @@ class EfficientBlock(nn.Module):
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
         self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1, True)
         self.conv3 = Conv(c3, c4, 1, 1, None, 1, 1, True) # squeeze
-        self.conv4 = Conv(c4, c2, 1, 1, None, 1, 1, True)
-
-        self.conv5 = Conv(c1, c2, 1, stride, None, 1, 1, True)
+        self.conv4 = Conv(c4, c3, 1, 1, None, 1, 1, nn.Sigmoid())
+        self.conv5 = Conv(c3, c2, 1, 1, None, 1, 1, False)
 
     def forward(self, x):
-        return self.conv5(x) + self.conv4(self.conv3(self.conv2(self.conv1(x))))
+        x1 = self.conv2(self.conv1(x))
+        return self.conv5(x1 * self.conv4(self.conv3(nn.AvgPool2d(5, 1, 2)(x1))))
 
 class DWConv(Conv):
     """Depth-wise convolution."""
