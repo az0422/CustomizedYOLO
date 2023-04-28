@@ -74,16 +74,16 @@ class ResidualBlocks(nn.Module):
         return x + self.m(x)
 
 class EfficientBlock(nn.Module):
-    def __init__(self, c1, c2, expand=4, ratio=16):
+    def __init__(self, c1, c2, expand=6, ratio=16, stride=1):
         super().__init__()
-        c3 = int(c2 * expand)
+        c3 = int(c1 * expand)
         c4 = c2 // ratio
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
-        self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1, True)
+        self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1, True)
         self.conv3 = Conv(c3, c4, 1, 1, None, 1, 1, True) # squeeze
         self.conv4 = Conv(c4, c2, 1, 1, None, 1, 1, True)
 
-        self.conv5 = Conv(c1, c2, 1, 1, None, 1, 1, True)
+        self.conv5 = Conv(c1, c2, 1, stride, None, 1, 1, True)
 
     def forward(self, x):
         return Shortcut()([self.conv5(x), self.conv4(self.conv3(self.conv2(self.conv1(x))))])
