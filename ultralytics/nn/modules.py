@@ -57,15 +57,22 @@ class Conv(nn.Module):
 class GroupConv(nn.Module):
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
         super().__init__()
+
+        if c1 % g != 0:
+            raise Exception("The group must be separated from the shape on axis 1.")
+
         self.conv = Conv(c1 // g, c2 // g, k=k, s=s, p=p, g=1, d=d, act=act)
-        self.g = g
+        self.indexes = []
+        self.gap = c1 // g
+
+        for i in range(g):
+            self.indexes.append(self.gap * i)
 
     def forward(self, x):
-        x1 = x.chunk(self.g, 1)
         res = []
 
-        for xx in x1:
-            res.append(self.conv(xx))
+        for index in self.indexes:
+            res.append(self.conv(x[:, index : index + self.gap]))
 
         return torch.cat(res, 1)
 
