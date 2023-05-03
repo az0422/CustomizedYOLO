@@ -54,6 +54,22 @@ class Conv(nn.Module):
         """Perform transposed convolution of 2D data."""
         return self.act(self.conv(x))
 
+class GroupConv(nn.Module):
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
+        super().__init__()
+        self.conv = Conv(c1 // g, c2 // g, k=k, s=s, p=p, g=1, d=d, act=act)
+        self.g = g
+
+    def forward(self, x):
+        x1 = x.chunk(self.g, 1)
+        res = []
+
+        for xx in x1:
+            res.append(self.conv(xx))
+
+        return torch.cat(res, 1)
+
+
 class ResidualBlock(nn.Module):
     def __init__(self, c1, c2):
         super().__init__()
