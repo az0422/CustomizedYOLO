@@ -54,29 +54,6 @@ class Conv(nn.Module):
         """Perform transposed convolution of 2D data."""
         return self.act(self.conv(x))
 
-class GroupConv(nn.Module):
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
-        super().__init__()
-
-        if c1 % g != 0:
-            raise Exception("The group must be separated from the shape on axis 1.")
-
-        self.conv = Conv(c1 // g, c2 // g, k=k, s=s, p=p, g=1, d=d, act=act)
-        self.indexes = []
-        self.gap = c1 // g
-
-        for i in range(g):
-            self.indexes.append(self.gap * i)
-
-    def forward(self, x):
-        res = []
-
-        for index in self.indexes:
-            res.append(self.conv(x[:, index : index + self.gap]))
-
-        return torch.cat(res, 1)
-
-
 class ResidualBlock(nn.Module):
     def __init__(self, c1, c2):
         super().__init__()
@@ -110,6 +87,16 @@ class EfficientBlock(nn.Module):
     def forward(self, x):
         x1 = self.conv2(self.conv1(x))
         return self.conv5(x1 * self.conv4(self.conv3(nn.AvgPool2d(5, 1, 2)(x1))))
+
+class MobileBlock(nn.Module):
+    def __init__(self, c1, c2):
+        super().__init__()
+        self.conv1 = Conv(c1, c1, 3, 1, None, 1, 1, True)
+        self.conv2 = Conv(c1, c1, 3, 1, None, c1, 1, True)
+        self.conv3 = Conv(c1, c2, 1, 1, None, 1, 1, True)
+
+    def forward(self, x):
+        return self.conv3(self.conv2(self.conv1(x)))
 
 class DWConv(Conv):
     """Depth-wise convolution."""
