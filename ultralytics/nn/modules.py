@@ -88,15 +88,14 @@ class EfficientBlock(nn.Module):
         x1 = self.conv2(self.conv1(x))
         return self.conv5(x1 * self.conv4(self.conv3(nn.AvgPool2d(5, 1, 2)(x1))))
 
-class MobileBlock(nn.Module):
-    def __init__(self, c1, c2):
+class DSConv(nn.Module):
+    def __init__(self, c1, c2, stride=1):
         super().__init__()
-        self.conv1 = Conv(c1, c1, 3, 1, None, 1, 1, True)
-        self.conv2 = Conv(c1, c1, 3, 1, None, c1, 1, True)
-        self.conv3 = Conv(c1, c2, 1, 1, None, 1, 1, True)
+        self.conv1 = Conv(c1, c1, 3, stride, None, c1, 1, True)
+        self.conv2 = Conv(c1, c2, 1, 1, None, 1, 1, True)
 
     def forward(self, x):
-        return self.conv3(self.conv2(self.conv1(x)))
+        return self.conv2(self.conv1(x))
 
 class DWConv(Conv):
     """Depth-wise convolution."""
