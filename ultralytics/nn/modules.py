@@ -97,6 +97,41 @@ class DSConv(nn.Module):
     def forward(self, x):
         return self.conv2(self.conv1(x))
 
+class DSConv2_s1(nn.Module):
+    def __init__(self, c1, c2, expand=6):
+        super().__init__()
+        c3 = c1 * expand
+
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
+        self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1, True)
+        self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, False)
+
+    def forward(self, x):
+        return x + self.conv3(self.conv2(self.conv1(x)))
+
+class DSConv2_s2(nn.Module):
+    def __init__(self, c1, c2, expand=6):
+        super().__init__()
+        c3 = c1 * expand
+
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
+        self.conv2 = Conv(c3, c3, 3, 2, None, c3, 1, True)
+        self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, False)
+
+    def forward(self, x):
+        return self.conv3(self.conv2(self.conv1(x)))
+
+class DSConv2(nn.Module):
+    def __init__(self, c1, c2, stride=1, expand=6):
+        super().__init__()
+        if stride == 1:
+            self.dsconv = DSConv2_s1(c1, c2, expand)
+        else:
+            self.dsconv = DSConv2_s2(c1, c2, expand)
+
+    def forward(self, x):
+        return self.dsconv(x)
+
 class DWConv(Conv):
     """Depth-wise convolution."""
 
