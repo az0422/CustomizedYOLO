@@ -569,6 +569,28 @@ class DFL(nn.Module):
         return self.conv(x.view(b, 4, self.c1, a).transpose(2, 1).softmax(1)).view(b, 4, a)
         # return self.conv(x.view(b, self.c1, 4, a).softmax(1)).view(b, 4, a)
 
+class DFL_cv1(nn.Module):
+    """
+    Integral module of Distribution Focal Loss (DFL).
+    Proposed in Generalized Focal Loss https://ieeexplore.ieee.org/document/9792391
+    """
+
+    def __init__(self, c1=16):
+        """Initialize a convolutional layer with a given number of input channels."""
+        super().__init__()
+        self.conv1 = ResidualBlocks(c1, c1, 3)
+        self.conv2 = nn.Conv2d(c1, 1, 1, bias=False).requires_grad_(False)
+        x = torch.arange(c1, dtype=torch.float)
+        self.conv2.weight.data[:] = nn.Parameter(x.view(1, c1, 1, 1))
+        self.c1 = c1
+
+    def forward(self, x):
+        """Applies a transformer layer on input tensor 'x' and returns a tensor."""
+        b, c, a = x.shape  # batch, channels, anchors
+        return self.conv2(self.conv1(x.view(b, 4, self.c1, a).transpose(2, 1).softmax(1))).view(b, 4, a)
+        # return self.conv(x.view(b, self.c1, 4, a).softmax(1)).view(b, 4, a)
+
+
 
 # Model heads below ----------------------------------------------------------------------------------------------------
 
@@ -643,7 +665,7 @@ class DetectCustomv1(nn.Module):
         self.cv2 = nn.ModuleList(
             nn.Sequential(Conv(x, c2, 3), ResidualBlocks(c2, c2, 3), nn.Conv2d(c2, 4 * self.reg_max, 1)) for x in ch)
         self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, c3, 3), ResidualBlocks(c3, c3, 3), nn.Conv2d(c3, self.nc, 1)) for x in ch)
-        self.dfl = DFL(self.reg_max) if self.reg_max > 1 else nn.Identity()
+        self.dfl = DFL_cv1(self.reg_max) if self.reg_max > 1 else nn.Identity()
 
     def forward(self, x):
         """Concatenates and returns predicted bounding boxes and class probabilities."""
