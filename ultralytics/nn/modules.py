@@ -639,10 +639,26 @@ class DetectCustomv1(nn.Module):
         self.reg_max = reg_max  # DFL channels (ch[0] // 16 to scale 4/8/12/16/20 for n/s/m/l/x)
         self.no = nc + self.reg_max * 4  # number of outputs per anchor
         self.stride = torch.zeros(self.nl)  # strides computed during build
+
         c2, c3 = max((reg_max, ch[0] // 4, self.reg_max * 4)), max(ch[0], self.nc)  # channels
         self.cv2 = nn.ModuleList(
-            nn.Sequential(Conv(x, c2, 3), ResidualBlocks(c2, c2, res_depth_box), nn.Conv2d(c2, 4 * self.reg_max, 1)) for x in ch)
-        self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, c3, 3), ResidualBlocks(c3, c3, res_depth_cls), nn.Conv2d(c3, self.nc, 1)) for x in ch)
+            nn.Sequential(
+                Conv(x, c2, 3),
+                ResidualBlocks(c2, c2, res_depth_box),
+                Conv(c2, c2, 1),
+                nn.Conv2d(c2, 4 * self.reg_max, 1)
+            ) for x in ch
+        )
+
+        self.cv3 = nn.ModuleList(
+            nn.Sequential(
+                Conv(x, c3, 3), 
+                ResidualBlocks(c3, c3, res_depth_cls),
+                Conv(c3, c3, 1),
+                nn.Conv2d(c3, self.nc, 1)
+            ) for x in ch
+        )
+
         self.dfl = DFL(self.reg_max) if self.reg_max > 1 else nn.Identity()
 
     def forward(self, x):
