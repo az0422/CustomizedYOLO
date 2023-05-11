@@ -438,26 +438,27 @@ class SPPF(nn.Module):
         return self.cv2(torch.cat((x, y1, y2, self.m(y2)), 1))
 
 class SPPCSP(nn.Module):
-    # CSP SPP https://github.com/WongKinYiu/CrossStagePartialNetworks
-    def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5, k=(5, 9, 13)):
-        super(SPPCSP, self).__init__()
-        c_ = int(2 * c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, 1, 1)
-        self.cv2 = nn.Conv2d(c1, c_, 1, 1, bias=False)
-        self.cv3 = Conv(c_, c_, 3, 1)
-        self.cv4 = Conv(c_, c_, 1, 1)
-        self.m = nn.ModuleList([nn.MaxPool2d(kernel_size=x, stride=1, padding=x // 2) for x in k])
-        self.cv5 = Conv(4 * c_, c_, 1, 1)
-        self.cv6 = Conv(c_, c_, 3, 1)
-        self.bn = nn.BatchNorm2d(2 * c_) 
-        self.act = nn.SiLU()
-        self.cv7 = Conv(2 * c_, c2, 1, 1)
+    def __init__(self, c1, c2, e=0.5, k=(5, 9, 13)):
+        super().__init__()
+        c3 = int(2 * c2 * e)
+
+        self.cv1 = Conv(c1, c3, 1, 1)
+        self.cv2 = Conv(c1, c3, 1, 1)
+        self.cv3 = Conv(c3 * 4, c3, 1, 1)
+        self.cv4 = Conv(c3 * 2, c2, 1, 1)
+
+        self.m1 = nn.MaxPool2d(kernel_size=k[0], stride=1, padding=k[0] // 2)
+        self.m2 = nn.MaxPool2d(kernel_size=k[1], stride=1, padding=k[1] // 2)
+        self.m3 = nn.MaxPool2d(kernel_size=k[2], stride=1, padding=k[2] // 2)
 
     def forward(self, x):
-        x1 = self.cv4(self.cv3(self.cv1(x)))
-        y1 = self.cv6(self.cv5(torch.cat([x1] + [m(x1) for m in self.m], 1)))
-        y2 = self.cv2(x)
-        return self.cv7(self.act(self.bn(torch.cat((y1, y2), dim=1))))
+        x1 = self.cv1(x)
+        x2 = self.cv2(x)
+        spp1 = self.m1(x1)
+        spp2 = self.m2(x1)
+        spp3 = self.m3(x1)
+        y1 = self.cv3(torch.concat([x1, spp1, spp2, spp3], 1))
+        return self.cv4(torch.concat([x2, y1], 1))
 
 
 class Focus(nn.Module):
