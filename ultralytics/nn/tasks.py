@@ -472,14 +472,14 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         if m in (Classify, Conv, ConvTranspose, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, Focus,
                  C1, C2, C2f, C3, C3TR, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x,
                  SPPCSP, BottleneckCSP, BottleneckCSP2, ResidualBlocks, ResidualBlock, EfficientBlock, DSConv,
-                 DSConv2, DSConv2_s1, DSConv2_s2):
+                 DSConv2, DSConv2_s1, DSConv2_s2, DSConv2s_s1):
             c1, c2 = ch[f], args[0]
             if c2 != nc:  # if c2 not equal to number of classes (i.e. for Classify() output)
                 c2 = make_divisible(min(c2, max_channels) * width, 8)
 
             args = [c1, c2, *args[1:]]
             if m in (C1, C2, C2f, C3, C3TR, C3Ghost, C3x,
-                     BottleneckCSP, BottleneckCSP2, ResidualBlocks):
+                     BottleneckCSP, BottleneckCSP2, ResidualBlocks, DSConv2s_s1):
                 args.insert(2, n)  # number of repeats
                 n = 1
         elif m is nn.BatchNorm2d:

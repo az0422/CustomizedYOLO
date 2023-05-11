@@ -132,6 +132,16 @@ class DSConv2(nn.Module):
     def forward(self, x):
         return self.dsconv(x)
 
+class DSConv2s_s1(nn.Module):
+    def __init__(self, c1, c2, expand=6, n=1):
+        super().__init__()
+
+        self.m = nn.Sequential(*[DSConv2_s1(c1, c1, expand) for _ in range(n)])
+
+    def forward(self, x):
+        return self.m(x)
+        
+
 class DWConv(Conv):
     """Depth-wise convolution."""
 
@@ -633,7 +643,7 @@ class DetectCustomv1(nn.Module):
     anchors = torch.empty(0)  # init
     strides = torch.empty(0)  # init
 
-    def __init__(self, nc=80, res_depth_box=3, res_depth_cls=3, reg_max=16, ch=()):  # detection layer
+    def __init__(self, nc=80, res_depth_1=3, res_depth_2=3, reg_max=16, ch=()):  # detection layer
         super().__init__()
         self.nc = nc  # number of classes
         self.nl = len(ch)  # number of detection layers
@@ -645,7 +655,7 @@ class DetectCustomv1(nn.Module):
         self.cv2 = nn.ModuleList(
             nn.Sequential(
                 Conv(x, c2, 3),
-                ResidualBlocks(c2, c2, res_depth_box),
+                ResidualBlocks(c2, c2, res_depth_1),
                 Conv(c2, c2, 1),
                 nn.Conv2d(c2, 4 * self.reg_max, 1)
             ) for x in ch
@@ -654,7 +664,7 @@ class DetectCustomv1(nn.Module):
         self.cv3 = nn.ModuleList(
             nn.Sequential(
                 Conv(x, c3, 3), 
-                ResidualBlocks(c3, c3, res_depth_cls),
+                ResidualBlocks(c3, c3, res_depth_2),
                 Conv(c3, c3, 1),
                 nn.Conv2d(c3, self.nc, 1)
             ) for x in ch
