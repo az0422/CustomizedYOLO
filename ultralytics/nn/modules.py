@@ -55,23 +55,22 @@ class Conv(nn.Module):
         return self.act(self.conv(x))
 
 class ResidualBlock(nn.Module):
-    def __init__(self, c1, c2):
+    def __init__(self, c1, c2, e=1.0):
         super().__init__()
-        self.conv1 = Conv(c2, c2, 1, 1)
-        self.conv2 = Conv(c2, c2, 3, 1)
+        c3 = int(c1 * e)
+        self.conv1 = Conv(c1, c3, 1, 1)
+        self.conv2 = Conv(c3, c2, 3, 1)
 
     def forward(self, x):
         return x + self.conv2(self.conv1(x))
 
 class ResidualBlocks(nn.Module):
-    def __init__(self, c1, c2, n=1):
+    def __init__(self, c1, c2, n=1, e=1.0):
         super().__init__()
-        conv1 = Conv(c2, c2, 1, 1)
-        conv2 = Conv(c2, c2, 3, 1)
-        self.m = nn.Sequential(*[ResidualBlock(c1, c2) for _ in range(n)])
+        self.m = nn.Sequential(*[ResidualBlock(c1, c2, e) for _ in range(n)])
 
     def forward(self, x):
-        return x + self.m(x)
+        return self.m(x)
 
 class EfficientBlock(nn.Module):
     def __init__(self, c1, c2, expand=6, ratio=16, stride=1):
