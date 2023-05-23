@@ -139,11 +139,20 @@ class MobileBlockV3(nn.Module):
         self.stride = stride
 
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
-        self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1, True)
-        self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, False)
+        self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1, True)
+        self.conv3 = Conv(c3, c4, 1, 1, None, 1, 1, True)
+        self.conv4 = Conv(c4, c3, 1, 1, None, 1, 1, nn.Sigmoid)
+        self.conv5 = Conv(c4, c2, 1, 1, None, 1, 1, False)
 
     def forward(self, x):
-        return x + self.conv3(self.conv2(self.conv1(x)))
+        x1 = self.conv2(self.conv1(x))
+        se = self.conv4(self.conv3(torch.mean(x1, dim=[2, 3], keepdim=True)))
+        x1 = x1 * se
+        y = self.conv5(x1)
+
+        if stride == 1:
+            return x + y
+        return y
 
 class PoolResidualBlock(nn.Module):
     def __init__(self, c1, c2, expand=2.0, shrink=0.5):
