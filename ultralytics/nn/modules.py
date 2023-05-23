@@ -99,18 +99,13 @@ class EfficientBlock(nn.Module):
         super().__init__()
         c3 = int(c1 * expand)
         c4 = c2 // ratio
-        self.stride = stride
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
         self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1, True)
         self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, None)
         self.se = SEBlock(c3, ratio)
 
     def forward(self, x):
-        y = self.conv3(self.se(self.conv2(self.conv1(x))))
-
-        if self.stride:
-            return y + x
-        return y
+        return x + self.conv3(self.se(self.conv2(self.conv1(x))))
 
 class DSConv(nn.Module):
     def __init__(self, c1, c2, stride=1):
