@@ -131,15 +131,66 @@ class DSConv2(nn.Module):
     def forward(self, x):
         return self.dsconv(x)
 
-class DSConv2s_s1(nn.Module):
-    def __init__(self, c1, c2, expand=6, n=1):
+class MobileBlockV3(nn.Module):
+    def __init__(self, c1, c2, stride=1, expand=6, ratio=16):
         super().__init__()
+        c3 = c1 * expand
+        c4 = c1 // ratio
+        self.stride = stride
 
-        self.m = nn.Sequential(*[DSConv2_s1(c1, c1, expand) for _ in range(n)])
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
+        self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1, True)
+        self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, False)
+
+    def forward(self, x):
+        return x + self.conv3(self.conv2(self.conv1(x)))
+
+class PoolResidualBlock(nn.Module):
+    def __init__(self, c1, c2, expand=2.0, shrink=0.5):
+        super().__init__()
+        c3 = int(c1 * expand)
+        c4 = int(c1 * shrink)
+
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
+        self.conv2 = Conv(c3, c4, 1, 1, None, 1, 1, True)
+        self.pool = nn.MaxPool2d(5, 1, 2)
+        self.conv3 = Conv(c4, c2, 3, 3, None, 1, 1, True)
+
+    def forward(self, x):
+        return x + self.conv3(self.pool(self.conv2(self.conv1(x))))
+
+class PoolResidualBlocks(nn.Module):
+    def __init__(self, c1, c2, n=1, expand=2.0, shrink=0.5):
+        super().__init__()
+        self.m = nn.Sequential(*[InceptionBlocks(c1, c2, expand, shrink) for _ in range(n)])
 
     def forward(self, x):
         return self.m(x)
-        
+
+class InceptionBlock(nn.Module):
+    def __init__(self, c1):
+        super().__init__()
+
+        self.conv1 = Conv(c1, c1, 1, 1, None, 1, 1, True)
+        self.conv2 = Conv(c1, c1, 3, 1, None, 1, 1, True)
+        self.conv3 = Conv(c1, c1, 3, 1, None, 1, 1, True)
+
+        self.conv4 = Conv(c1, c1, 1, 1, None, 1, 1, True)
+        self.conv5 = Conv(c1, c1, 1, 1, None, 1, 1, True)
+
+        self.pool = nn.MaxPool2d(5, 1, 2)
+        self.conv6 = Conv(c1, c1, 1, 1, None, 1, 1, True)
+
+        self.conv7 = Conv(c1, c1, 1, 1, None, 1, 1, True)
+
+    def forward(self, x):
+        y1 = self.conv3(self.conv2(self.conv1(x)))
+        y2 = self.conv5(self.conv4(x))
+        y3 = self.conv6(self.pool(x))
+        y4 = self.conv7(x)
+        return torch.concat([y1, y2, y3, y4], axis=1)
+
+# -------------------------------------------------------------------------------------------------------------
 
 class DWConv(Conv):
     """Depth-wise convolution."""
