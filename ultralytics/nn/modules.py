@@ -175,23 +175,23 @@ class MobileBlockV3(nn.Module):
         return y
 
 class PoolResidualBlock(nn.Module):
-    def __init__(self, c1, c2, expand=2.0, shrink=0.5):
+    def __init__(self, c1, c2, expand=2, shrink=2):
         super().__init__()
-        c3 = int(c1 * expand)
-        c4 = int(c1 * shrink)
+        c3 = c1 * expand
+        c4 = c1 // shrink
 
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
         self.conv2 = Conv(c3, c4, 1, 1, None, 1, 1, True)
         self.pool = nn.MaxPool2d(5, 1, 2)
-        self.conv3 = Conv(c4, c2, 3, 3, None, 1, 1, True)
+        self.conv3 = Conv(c4, c2, 3, 1, None, 1, 1, True)
 
     def forward(self, x):
         return x + self.conv3(self.pool(self.conv2(self.conv1(x))))
 
 class PoolResidualBlocks(nn.Module):
-    def __init__(self, c1, c2, n=1, expand=2.0, shrink=0.5):
+    def __init__(self, c1, c2, n=1, expand=2, shrink=2):
         super().__init__()
-        self.m = nn.Sequential(*[InceptionBlocks(c1, c2, expand, shrink) for _ in range(n)])
+        self.m = nn.Sequential(*[PoolResidualBlocks(c1, c2, expand, shrink) for _ in range(4)])
 
     def forward(self, x):
         return self.m(x)
