@@ -72,20 +72,45 @@ class ResidualBlocks(nn.Module):
     def forward(self, x):
         return self.m(x)
 
+class SEBlock(nn.Module):
+    def __init__(self, c1, ratio=16):
+        super(SEBlock, self).__init__()
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.fc1 = nn.Linear(c1, c1 // ratio)
+        self.relu = nn.ReLU(inplace=True)
+        self.fc2 = nn.Linear(c1 // ratio, c1)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        batch_size, channels, _, _ = x.size()
+
+        # Squeeze
+        y = self.pool(x).view(batch_size, channels)
+
+        # Excitation
+        y = self.sigmoid(self.fc2(self.relu(self.fc1(y))))
+
+        # Scale
+        y = y.view(batch_size, channels, 1, 1)
+        return x * y
+
 class EfficientBlock(nn.Module):
     def __init__(self, c1, c2, expand=6, ratio=16, stride=1):
         super().__init__()
         c3 = int(c1 * expand)
         c4 = c2 // ratio
+        self.stride = stride
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
         self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1, True)
-        self.conv3 = Conv(c3, c4, 1, 1, None, 1, 1, True) # squeeze
-        self.conv4 = Conv(c4, c3, 1, 1, None, 1, 1, nn.Sigmoid())
-        self.conv5 = Conv(c3, c2, 1, 1, None, 1, 1, False)
+        self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, None)
+        self.se = SEBlock(c3, ratio)
 
     def forward(self, x):
-        x1 = self.conv2(self.conv1(x))
-        return self.conv5(x1 * self.conv4(self.conv3(nn.AvgPool2d(5, 1, 2)(x1))))
+        y = self.conv3(self.se(self.conv2(self.conv1(x))))
+
+        if self.stride:
+            return y + x
+        return y
 
 class DSConv(nn.Module):
     def __init__(self, c1, c2, stride=1):
@@ -142,15 +167,15 @@ class MobileBlockV3(nn.Module):
         self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1, True)
         self.conv3 = Conv(c3, c4, 1, 1, None, 1, 1, True)
         self.conv4 = Conv(c4, c3, 1, 1, None, 1, 1, nn.Sigmoid)
-        self.conv5 = Conv(c4, c2, 1, 1, None, 1, 1, False)
+        self.conv5 = Conv(c3, c2, 1, 1, None, 1, 1, False)
 
     def forward(self, x):
         x1 = self.conv2(self.conv1(x))
-        se = self.conv4(self.conv3(torch.mean(x1, dim=[2, 3], keepdim=True)))
+        se = self.conv4(self.conv3(x1))
         x1 = x1 * se
         y = self.conv5(x1)
 
-        if stride == 1:
+        if self.stride == 1:
             return x + y
         return y
 
