@@ -191,7 +191,7 @@ class PoolResidualBlock(nn.Module):
 class PoolResidualBlocks(nn.Module):
     def __init__(self, c1, c2, n=1, expand=2, shrink=2):
         super().__init__()
-        self.m = nn.Sequential(*[PoolResidualBlocks(c1, c2, expand, shrink) for _ in range(4)])
+        self.m = nn.Sequential(*[PoolResidualBlock(c1, c2, expand, shrink) for _ in range(n)])
 
     def forward(self, x):
         return self.m(x)
