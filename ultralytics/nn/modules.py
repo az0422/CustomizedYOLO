@@ -219,6 +219,49 @@ class InceptionBlock(nn.Module):
         y4 = self.conv7(x)
         return torch.concat([y1, y2, y3, y4], axis=1)
 
+class SPPCSP(nn.Module):
+    def __init__(self, c1, c2, e=1.0, k=(5, 9, 13)):
+        super().__init__()
+        c3 = int(2 * c2 * e)
+
+        self.cv1 = Conv(c1, c3, 1, 1)
+        self.cv2 = Conv(c1, c3, 1, 1)
+        self.cv3 = Conv(c3 * 4, c3, 1, 1)
+        self.cv4 = Conv(c3 * 2, c2, 1, 1)
+
+        self.m1 = nn.MaxPool2d(kernel_size=k[0], stride=1, padding=k[0] // 2)
+        self.m2 = nn.MaxPool2d(kernel_size=k[1], stride=1, padding=k[1] // 2)
+        self.m3 = nn.MaxPool2d(kernel_size=k[2], stride=1, padding=k[2] // 2)
+
+    def forward(self, x):
+        x1 = self.cv1(x)
+        x2 = self.cv2(x)
+        spp1 = self.m1(x1)
+        spp2 = self.m2(x1)
+        spp3 = self.m3(x1)
+        y1 = self.cv3(torch.concat([x1, spp1, spp2, spp3], 1))
+        return self.cv4(torch.concat([x2, y1], 1))
+
+class SPPCSPF(nn.Module):
+    def __init__(self, c1, c2, e=1.0, k=5):
+        super().__init__()
+        c3 = int(c2 * e)
+
+        self.conv1 = Conv(c1, c3, 1, 1)
+        self.conv2 = Conv(c1, c3, 1, 1)
+        self.conv3 = Conv(c3 * 4, c3, 1, 1)
+        self.conv4 = Conv(c3 * 2, c2, 1, 1)
+
+        self.m = nn.MaxPool2d(kernel_size=k, stride=1, padding=k // 2)
+
+    def forward(self, x):
+        x1 = self.conv1(x)
+        x2 = self.conv2(x)
+        y1 = self.m(x2)
+        y2 = self.m(y1)
+        y3 = self.m(y2)
+        return self.conv4(torch.concat([x1, self.conv3(torch.concat([x2, y1, y2, y3], 1))], 1))
+
 # -------------------------------------------------------------------------------------------------------------
 
 class DWConv(Conv):
@@ -525,29 +568,6 @@ class SPPF(nn.Module):
         y1 = self.m(x)
         y2 = self.m(y1)
         return self.cv2(torch.cat((x, y1, y2, self.m(y2)), 1))
-
-class SPPCSP(nn.Module):
-    def __init__(self, c1, c2, e=0.5, k=(5, 9, 13)):
-        super().__init__()
-        c3 = int(2 * c2 * e)
-
-        self.cv1 = Conv(c1, c3, 1, 1)
-        self.cv2 = Conv(c1, c3, 1, 1)
-        self.cv3 = Conv(c3 * 4, c3, 1, 1)
-        self.cv4 = Conv(c3 * 2, c2, 1, 1)
-
-        self.m1 = nn.MaxPool2d(kernel_size=k[0], stride=1, padding=k[0] // 2)
-        self.m2 = nn.MaxPool2d(kernel_size=k[1], stride=1, padding=k[1] // 2)
-        self.m3 = nn.MaxPool2d(kernel_size=k[2], stride=1, padding=k[2] // 2)
-
-    def forward(self, x):
-        x1 = self.cv1(x)
-        x2 = self.cv2(x)
-        spp1 = self.m1(x1)
-        spp2 = self.m2(x1)
-        spp3 = self.m3(x1)
-        y1 = self.cv3(torch.concat([x1, spp1, spp2, spp3], 1))
-        return self.cv4(torch.concat([x2, y1], 1))
 
 
 class Focus(nn.Module):
