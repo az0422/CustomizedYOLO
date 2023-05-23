@@ -95,12 +95,12 @@ class SEBlock(nn.Module):
         return x * y
 
 class EfficientBlock(nn.Module):
-    def __init__(self, c1, c2, expand=6, ratio=16, stride=1):
+    def __init__(self, c1, c2, expand=6, ratio=16):
         super().__init__()
         c3 = int(c1 * expand)
         c4 = c2 // ratio
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
-        self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1, True)
+        self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1, True)
         self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, None)
         self.se = SEBlock(c3, ratio)
 
