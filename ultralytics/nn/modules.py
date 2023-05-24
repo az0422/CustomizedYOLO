@@ -242,7 +242,7 @@ class SPPCSP(nn.Module):
         y1 = self.cv3(torch.concat([x1, spp1, spp2, spp3], 1))
         return self.cv4(torch.concat([x2, y1], 1))
 
-class SPPCSPF(nn.Module):
+class SPPFCSP(nn.Module):
     def __init__(self, c1, c2, e=1.0, k=5):
         super().__init__()
         c3 = int(c2 * e)
@@ -261,6 +261,25 @@ class SPPCSPF(nn.Module):
         y2 = self.m(y1)
         y3 = self.m(y2)
         return self.conv4(torch.concat([x1, self.conv3(torch.concat([x2, y1, y2, y3], 1))], 1))
+
+class SPPFCSPF(nn.Module):
+    def __init__(self, c1, c2, e=1.0, k=5):
+        super().__init__()
+        c3 = int(c2 * e)
+
+        self.conv1 = Conv(c1, c3, 1, 1)
+        self.conv2 = Conv(c1, c3, 1, 1)
+        self.conv3 = Conv(c3 * 5, c2, 1, 1)
+
+        self.m = nn.MaxPool2d(kernel_size=k, stride=1, padding=k // 2)
+
+    def forward(self, x):
+        x1 = self.conv1(x)
+        x2 = self.conv2(x)
+        y1 = self.m(x2)
+        y2 = self.m(y1)
+        y3 = self.m(y2)
+        return self.conv3(torch.concat([x1, x2, y1, y2, y3], 1))
 
 # -------------------------------------------------------------------------------------------------------------
 
