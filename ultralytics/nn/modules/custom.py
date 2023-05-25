@@ -153,7 +153,7 @@ class InceptionBlock(nn.Module):
         y2 = self.conv5(self.conv4(x))
         y3 = self.conv6(self.pool(x))
         y4 = self.conv7(x)
-        return torch.concat([y1, y2, y3, y4], axis=1)
+        return torch.cat([y1, y2, y3, y4], axis=1)
 
 class SPPCSP(nn.Module):
     def __init__(self, c1, c2, e=1.0, k=(5, 9, 13)):
@@ -175,8 +175,8 @@ class SPPCSP(nn.Module):
         spp1 = self.m1(x1)
         spp2 = self.m2(x1)
         spp3 = self.m3(x1)
-        y1 = self.cv3(torch.concat([x1, spp1, spp2, spp3], 1))
-        return self.cv4(torch.concat([x2, y1], 1))
+        y1 = self.cv3(torch.cat([x1, spp1, spp2, spp3], 1))
+        return self.cv4(torch.cat([x2, y1], 1))
 
 class SPPFCSP(nn.Module):
     def __init__(self, c1, c2, e=1.0, k=5):
@@ -196,7 +196,7 @@ class SPPFCSP(nn.Module):
         y1 = self.m(x2)
         y2 = self.m(y1)
         y3 = self.m(y2)
-        return self.conv4(torch.concat([x1, self.conv3(torch.concat([x2, y1, y2, y3], 1))], 1))
+        return self.conv4(torch.cat([x1, self.conv3(torch.cat([x2, y1, y2, y3], 1))], 1))
 
 class SPPFCSPF(nn.Module):
     def __init__(self, c1, c2, e=1.0, k=5):
@@ -215,7 +215,7 @@ class SPPFCSPF(nn.Module):
         y1 = self.m(x2)
         y2 = self.m(y1)
         y3 = self.m(y2)
-        return self.conv3(torch.concat([x1, x2, y1, y2, y3], 1))
+        return self.conv3(torch.cat([x1, x2, y1, y2, y3], 1))
 
 # ------------------------------------------------------------------------------
 
