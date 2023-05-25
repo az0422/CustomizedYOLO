@@ -95,84 +95,17 @@ class SEBlock(nn.Module):
         return x * y
 
 class EfficientBlock(nn.Module):
-    def __init__(self, c1, c2, expand=6, ratio=16):
+    def __init__(self, c1, c2, expand=6, ratio=16, act=True):
         super().__init__()
         c3 = int(c1 * expand)
         c4 = c2 // ratio
-        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
-        self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1, True)
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, act)
+        self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1, act)
         self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, None)
         self.se = SEBlock(c3, ratio)
 
     def forward(self, x):
         return x + self.conv3(self.se(self.conv2(self.conv1(x))))
-
-class DSConv(nn.Module):
-    def __init__(self, c1, c2, stride=1):
-        super().__init__()
-        self.conv1 = Conv(c1, c1, 3, stride, None, c1, 1, True)
-        self.conv2 = Conv(c1, c2, 1, 1, None, 1, 1, True)
-
-    def forward(self, x):
-        return self.conv2(self.conv1(x))
-
-class DSConv2_s1(nn.Module):
-    def __init__(self, c1, c2, expand=6):
-        super().__init__()
-        c3 = c1 * expand
-
-        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
-        self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1, True)
-        self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, False)
-
-    def forward(self, x):
-        return x + self.conv3(self.conv2(self.conv1(x)))
-
-class DSConv2_s2(nn.Module):
-    def __init__(self, c1, c2, expand=6):
-        super().__init__()
-        c3 = c1 * expand
-
-        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
-        self.conv2 = Conv(c3, c3, 3, 2, None, c3, 1, True)
-        self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, False)
-
-    def forward(self, x):
-        return self.conv3(self.conv2(self.conv1(x)))
-
-class DSConv2(nn.Module):
-    def __init__(self, c1, c2, stride=1, expand=6):
-        super().__init__()
-        if stride == 1:
-            self.dsconv = DSConv2_s1(c1, c2, expand)
-        else:
-            self.dsconv = DSConv2_s2(c1, c2, expand)
-
-    def forward(self, x):
-        return self.dsconv(x)
-
-class MobileBlockV3(nn.Module):
-    def __init__(self, c1, c2, stride=1, expand=6, ratio=16):
-        super().__init__()
-        c3 = c1 * expand
-        c4 = c1 // ratio
-        self.stride = stride
-
-        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, True)
-        self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1, True)
-        self.conv3 = Conv(c3, c4, 1, 1, None, 1, 1, True)
-        self.conv4 = Conv(c4, c3, 1, 1, None, 1, 1, nn.Sigmoid)
-        self.conv5 = Conv(c3, c2, 1, 1, None, 1, 1, False)
-
-    def forward(self, x):
-        x1 = self.conv2(self.conv1(x))
-        se = self.conv4(self.conv3(x1))
-        x1 = x1 * se
-        y = self.conv5(x1)
-
-        if self.stride == 1:
-            return x + y
-        return y
 
 class PoolResidualBlock(nn.Module):
     def __init__(self, c1, c2, expand=2, shrink=2):

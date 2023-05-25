@@ -461,6 +461,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         LOGGER.info(f"\n{'':>3}{'from':>20}{'n':>3}{'params':>10}  {'module':<45}{'arguments':<30}")
     ch = [ch]
     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
+
     for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
         m = getattr(torch.nn, m[3:]) if 'nn.' in m else globals()[m]  # get module
         for j, a in enumerate(args):
@@ -469,37 +470,51 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                     args[j] = locals()[a] if a in locals() else ast.literal_eval(a)
 
         n = n_ = max(round(n * depth), 1) if n > 1 else n  # depth gain
+
         if m in (Classify, Conv, ConvTranspose, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, Focus,
                  C1, C2, C2f, C3, C3TR, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x,
-                 SPPCSP, SPPFCSP, SPPFCSPF, BottleneckCSP, BottleneckCSP2, ResidualBlocks, ResidualBlock, DSConv,
-                 DSConv2, DSConv2_s1, DSConv2_s2, PoolResidualBlock, PoolResidualBlocks, MobileBlockV3):
+                 BottleneckCSP, BottleneckCSP2):
             c1, c2 = ch[f], args[0]
+
             if c2 != nc:  # if c2 not equal to number of classes (i.e. for Classify() output)
                 c2 = make_divisible(min(c2, max_channels) * width, 8)
             args = [c1, c2, *args[1:]]
+
             if m in (C1, C2, C2f, C3, C3TR, C3Ghost, C3x,
                      BottleneckCSP, BottleneckCSP2, ResidualBlocks, PoolResidualBlocks):
                 args.insert(2, n)  # number of repeats
                 n = 1
+
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
+
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
-        elif m in (Detect, Segment, Pose,
-                   DetectCustomv1):
+
+        elif m in (Detect, Segment, Pose, DetectCustomv1):
             args.append([ch[x] for x in f])
             if m is Segment:
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
+
         elif m is Shortcut:
             c2 = ch[f[0]]
+
         elif m is Groups:
             c2 = ch[f] // args[0]
+
         elif m is InceptionBlock:
             c2 = ch[f] * 4
             c1 = ch[f]
             args = [c1]
-        elif m is EfficientBlock:
-            args = [ch[f], *args]
+
+        elif m in (EfficientBlock, SPPCSP, SPPFCSP, SPPFCSPF, ResidualBlocks, ResidualBlock,
+                   PoolResidualBlock, PoolResidualBlocks):
+            c1, c2 = ch[f], make_divisible(min(args[0], max_channels) * width, 8)
+            args = [c1, c2, *args[1:]]
+
+            if m in (ResidualBlocks, PoolResidualBlocks):
+                args.insert(2, n)
+                n = 1
         else:
             c2 = ch[f]
 
