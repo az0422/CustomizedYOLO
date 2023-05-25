@@ -7,13 +7,13 @@ from ultralytics.nn.modules import *
 from ultralytics.yolo.utils.tal import dist2bbox, make_anchors
 
 class Groups(nn.Module):
-    def __init__(self, groups=2, group_id=0, dim=1):
+    def __init__(self, groups=2, group_id=0, dim):
         super().__init__()
         self.groups = groups
         self.group_id = group_id
 
     def forward(self, x):
-        return x.chunk(self.groups, self.dimension)[self.group_id]
+        return x.chunk(self.groups, 1)[self.group_id]
 
 class GroupsF(nn.Module):
     def __init__(self, groups=2, group_id=0):
