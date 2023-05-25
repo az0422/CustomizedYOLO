@@ -93,17 +93,22 @@ class SEBlock(nn.Module):
         return x * y
 
 class EfficientBlock(nn.Module):
-    def __init__(self, c1, c2, expand=6, ratio=16, act=True):
+    def __init__(self, c1, c2, expand=6, ratio=16, stride=1, act=True):
         super().__init__()
         c3 = int(c1 * expand)
-        c4 = c2 // ratio
+        self.stride = stride
+        
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, act)
         self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1, act)
         self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, None)
         self.se = SEBlock(c3, ratio)
 
     def forward(self, x):
-        return x + self.conv3(self.se(self.conv2(self.conv1(x))))
+        y = self.conv3(self.se(self.conv2(self.conv1(x))))
+        
+        if self.stride == 1:
+            return x + y
+        return y
 
 class PoolResidualBlock(nn.Module):
     def __init__(self, c1, c2, expand=2, shrink=2):
