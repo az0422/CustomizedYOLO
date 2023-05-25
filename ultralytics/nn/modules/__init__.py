@@ -8,8 +8,7 @@ from .head import Classify, Detect, Pose, RTDETRDecoder, Segment
 from .transformer import (AIFI, MLP, DeformableTransformerDecoder, DeformableTransformerDecoderLayer, LayerNorm2d,
                           MLPBlock, MSDeformAttn, TransformerBlock, TransformerEncoderLayer, TransformerLayer)
 from .custom import (Groups, GroupsF, Shortcut, ResidualBlock, ResidualBlocks, SEBlock, EfficientBlock, PoolResidualBlock,
-                     PoolResidualBlocks, InceptionBlock, SPPCSP, SPPFCSP, SPPFCSPF, DetectCustomv1, BottleneckCSP2, 
-                     EfficientBlockExp, DepthwiseConvExp)
+                     PoolResidualBlocks, InceptionBlock, SPPCSP, SPPFCSP, SPPFCSPF, DetectCustomv1, BottleneckCSP2)
 
 __all__ = [
     'Conv', 'LightConv', 'RepConv', 'DWConv', 'DWConvTranspose2d', 'ConvTranspose', 'Focus', 'GhostConv',
@@ -20,5 +19,4 @@ __all__ = [
     'DeformableTransformerDecoderLayer', 'MSDeformAttn', 'MLP']
 
 __all__ += ['Groups', 'GroupsF', 'Shortcut', 'ResidualBlock', 'ResidualBlocks', 'SEBlock', 'EfficientBlock', 'PoolResidualBlock',
-            'PoolResidualBlocks', 'InceptionBlock', 'SPPCSP', 'SPPFCSP', 'SPPFCSPF', 'DetectCustomv1', 'BottleneckCSP2', 
-            'EfficientBlockExp', 'DepthwiseConvExp']
+            'PoolResidualBlocks', 'InceptionBlock', 'SPPCSP', 'SPPFCSP', 'SPPFCSPF', 'DetectCustomv1', 'BottleneckCSP2']

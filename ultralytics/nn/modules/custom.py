@@ -28,18 +28,6 @@ class GroupsF(nn.Module):
 
         return x[:, chunk_index_start : chunk_index_end]
 
-class DepthwiseConvExp(nn.Module):
-    def __init__(self, c1, c2, k=3):
-        super().__init__()
-        self.conv_list = [Conv(1, 1, k, 1) for _ in range(c1)]
-        self.group_list = [GroupsF(c1, i) for i in range(c1)]
-
-    def forward(self, x):
-        result = []
-        for conv, group in zip(self.conv_list, self.group_list):
-            result.append(conv(group(x)))
-        return torch.concat(result, 1)
-
 class Shortcut(nn.Module):
     def __init__(self):
         super().__init__()
@@ -111,19 +99,6 @@ class EfficientBlock(nn.Module):
         c4 = c2 // ratio
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, act)
         self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1, act)
-        self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, None)
-        self.se = SEBlock(c3, ratio)
-
-    def forward(self, x):
-        return x + self.conv3(self.se(self.conv2(self.conv1(x))))
-
-class EfficientBlockExp(nn.Module):
-    def __init__(self, c1, c2, expand=6, ratio=16, act=True):
-        super().__init__()
-        c3 = int(c1 * expand)
-        c4 = c2 // ratio
-        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, act)
-        self.conv2 = DepthwiseConvExp(c3, c3, 3)
         self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, None)
         self.se = SEBlock(c3, ratio)
 
