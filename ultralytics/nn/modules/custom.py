@@ -41,7 +41,7 @@ class BottleneckCSP2(nn.Module):
         self.cv2 = nn.Conv2d(c_, c_, 1, 1, bias=False)
         self.cv3 = Conv(2 * c_, c2, 1, 1)
         self.bn = nn.BatchNorm2d(2 * c_) 
-        self.act = Mish()
+        self.act = nn.SiLU()
         self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)])
 
     def forward(self, x):
@@ -141,7 +141,7 @@ class InceptionBlock(nn.Module):
 class SPPCSP(nn.Module):
     def __init__(self, c1, c2, e=1.0, k=(5, 9, 13)):
         super().__init__()
-        c3 = int(2 * c2 * e)
+        c3 = int(c2 * e)
 
         self.cv1 = Conv(c1, c3, 1, 1)
         self.cv2 = Conv(c1, c3, 1, 1)
