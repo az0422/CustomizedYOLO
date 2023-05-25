@@ -527,7 +527,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m is Shortcut:
             c2 = ch[f[0]]
 
-        elif m is Groups:
+        elif m in (Groups, GroupsF):
             c2 = ch[f] // args[0]
 
         elif m is InceptionBlock:

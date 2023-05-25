@@ -17,5 +17,5 @@ __all__ = [
     'GhostBottleneck', 'Bottleneck', 'BottleneckCSP', 'Proto', 'Detect', 'Segment', 'Pose', 'Classify',
     'TransformerEncoderLayer', 'RepC3', 'RTDETRDecoder', 'AIFI', 'DeformableTransformerDecoder',
     'DeformableTransformerDecoderLayer', 'MSDeformAttn', 'MLP'] \
-    + ['Groups', 'Shortcut', 'ResidualBlock', 'ResidualBlocks', 'SEBlock', 'EfficientBlock', 'PoolResidualBlock',
+    + ['Groups', 'GroupsF', 'Shortcut', 'ResidualBlock', 'ResidualBlocks', 'SEBlock', 'EfficientBlock', 'PoolResidualBlock',
     'PoolResidualBlocks', 'InceptionBlock', 'SPPCSP', 'SPPFCSP', 'SPPFCSPF', 'DetectCustomv1', 'BottleneckCSP2']
