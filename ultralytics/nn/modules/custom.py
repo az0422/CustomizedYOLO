@@ -30,6 +30,7 @@ class GroupsF(nn.Module):
 
 class DepthwiseConvExp(nn.Module):
     def __init__(self, c1, c2, k=3):
+        super().__init__()
         self.conv_list = [Conv(1, 1, k, 1) for _ in range(c1)]
         self.group_list = [GroupsF(c1, i) for i in range(c1)]
 
