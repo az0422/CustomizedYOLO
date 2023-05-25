@@ -7,7 +7,7 @@ from ultralytics.nn.modules import *
 from ultralytics.yolo.utils.tal import dist2bbox, make_anchors
 
 class Groups(nn.Module):
-    def __init__(self, groups=2, group_id=0):
+    def __init__(self, groups=2, group_id=0, dim=1):
         super().__init__()
         self.groups = groups
         self.group_id = group_id
