@@ -7,14 +7,26 @@ from ultralytics.nn.modules import *
 from ultralytics.yolo.utils.tal import dist2bbox, make_anchors
 
 class Groups(nn.Module):
-    def __init__(self, groups=2, group_id=0, dimension=1):
+    def __init__(self, groups=2, group_id=0):
         super().__init__()
         self.groups = groups
         self.group_id = group_id
-        self.dimension=dimension
 
     def forward(self, x):
         return x.chunk(self.groups, self.dimension)[self.group_id]
+
+class GroupsF(nn.Module):
+    def __init__(self, groups=2, group_id=0):
+        super().__init__()
+        self.groups = groups
+        self.group_id = group_id
+
+    def forward(self, x):
+        channels = x.size()[1]
+        chunk_index_start = channels // self.groups * self.group_id
+        chunk_index_end = channels // self.groups * (self.group_id + 1)
+
+        return x[:, chunk_index_start : chunk_index_end]
 
 class Shortcut(nn.Module):
     def __init__(self):
