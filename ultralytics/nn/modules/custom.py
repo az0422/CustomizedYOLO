@@ -133,20 +133,21 @@ class PoolResidualBlocks(nn.Module):
         return self.m(x)
 
 class InceptionBlock(nn.Module):
-    def __init__(self, c1):
+    def __init__(self, c1, ratio=1):
         super().__init__()
+        c2 = c1 // ratio
 
-        self.conv1 = Conv(c1, c1, 1, 1, None, 1, 1, True)
-        self.conv2 = Conv(c1, c1, 3, 1, None, 1, 1, True)
-        self.conv3 = Conv(c1, c1, 3, 1, None, 1, 1, True)
+        self.conv1 = Conv(c1, c2, 1, 1, None, 1, 1, True)
+        self.conv2 = Conv(c2, c2, 3, 1, None, 1, 1, True)
+        self.conv3 = Conv(c2, c2, 3, 1, None, 1, 1, True)
 
-        self.conv4 = Conv(c1, c1, 1, 1, None, 1, 1, True)
-        self.conv5 = Conv(c1, c1, 1, 1, None, 1, 1, True)
+        self.conv4 = Conv(c1, c2, 1, 1, None, 1, 1, True)
+        self.conv5 = Conv(c2, c2, 1, 1, None, 1, 1, True)
 
         self.pool = nn.MaxPool2d(5, 1, 2)
-        self.conv6 = Conv(c1, c1, 1, 1, None, 1, 1, True)
+        self.conv6 = Conv(c1, c2, 1, 1, None, 1, 1, True)
 
-        self.conv7 = Conv(c1, c1, 1, 1, None, 1, 1, True)
+        self.conv7 = Conv(c1, c2, 1, 1, None, 1, 1, True)
 
     def forward(self, x):
         y1 = self.conv3(self.conv2(self.conv1(x)))
