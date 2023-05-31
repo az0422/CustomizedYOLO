@@ -531,7 +531,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c2 = ch[f] // args[0]
 
         elif m is InceptionBlock:
-            c2 = ch[f] * 4
+            c2 = ch[f] // args[0] * 4
             c1 = ch[f]
             args = [c1]
 
