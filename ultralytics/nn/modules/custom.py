@@ -169,6 +169,16 @@ class InceptionBlock(nn.Module):
         y4 = self.conv7(x)
         return torch.cat([y1, y2, y3, y4], axis=1)
 
+class MobileBlock(nn.Module):
+    def __init__(self, c1, c2, stride=1):
+        super().__init__()
+        
+        self.conv1 = Conv(c1, c1, 3, stride, None, c1, 1, True)
+        self.conv2 = Conv(c1, c2, 1, 1, None, 1, 1, True)
+    
+    def forward(self, x):
+        return self.conv2(self.conv1(x))
+
 class SPPCSP(nn.Module):
     def __init__(self, c1, c2, e=1.0, k=(5, 9, 13)):
         super().__init__()
