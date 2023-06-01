@@ -31,8 +31,21 @@ class GroupsF(nn.Module):
 class Shortcut(nn.Module):
     def __init__(self):
         super().__init__()
+    
     def forward(self, x):
         return x[0] + x[1]
+    
+class Bagging(nn.Module):
+    def __init__(self):
+        super().__init__()
+    
+    def forward(self, x):
+        result = x[0]
+        
+        for xx in x[1:]:
+            result = result + xx
+        
+        return result
 
 class ResidualBlock(nn.Module):
     def __init__(self, c1, c2, e=1.0):
@@ -142,7 +155,7 @@ class InceptionBlock(nn.Module):
         self.conv3 = Conv(c2, c2, 3, 1, None, 1, 1, True)
 
         self.conv4 = Conv(c1, c2, 1, 1, None, 1, 1, True)
-        self.conv5 = Conv(c2, c2, 1, 1, None, 1, 1, True)
+        self.conv5 = Conv(c2, c2, 3, 1, None, 1, 1, True)
 
         self.pool = nn.MaxPool2d(5, 1, 2)
         self.conv6 = Conv(c1, c2, 1, 1, None, 1, 1, True)

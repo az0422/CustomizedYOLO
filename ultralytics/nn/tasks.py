@@ -524,7 +524,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             if m is Segment:
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
 
-        elif m is Shortcut:
+        elif m in (Shortcut, Bagging):
             c2 = ch[f[0]]
 
         elif m in (Groups, GroupsF):
