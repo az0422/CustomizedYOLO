@@ -46,17 +46,8 @@ class Bagging(nn.Module):
             result = result + xx
         
         return result
-
-class ResidualBlock(nn.Module):
-    def __init__(self, c1, c2, e=1.0):
-        super().__init__()
-        c3 = int(c1 * e)
-        self.conv1 = Conv(c1, c3, 1, 1)
-        self.conv2 = Conv(c3, c2, 3, 1)
-
-    def forward(self, x):
-        return x + self.conv2(self.conv1(x))
-
+    
+    
 class BottleneckCSP2(nn.Module):
     # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
     def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
@@ -74,6 +65,16 @@ class BottleneckCSP2(nn.Module):
         y1 = self.m(x1)
         y2 = self.cv2(x1)
         return self.cv3(self.act(self.bn(torch.cat((y1, y2), dim=1))))
+
+class ResidualBlock(nn.Module):
+    def __init__(self, c1, c2, e=1.0):
+        super().__init__()
+        c3 = int(c1 * e)
+        self.conv1 = Conv(c1, c3, 1, 1)
+        self.conv2 = Conv(c3, c2, 3, 1)
+
+    def forward(self, x):
+        return x + self.conv2(self.conv1(x))
 
 class ResidualBlocks(nn.Module):
     def __init__(self, c1, c2, n=1, e=1.0):
@@ -104,6 +105,23 @@ class SEBlock(nn.Module):
         # Scale
         y = y.view(batch_size, channels, 1, 1)
         return x * y
+
+class SEResidualBlock(nn.Module):
+    def __init__(self, c1, c2, ratio=16):
+        super().__init__()
+        self.se = SEBlock(c1, ratio)
+        self.conv = Conv(c1, c2, 3, 1, None, 1, 1, True)
+    
+    def forward(self, x):
+        return x + self.conv(self.se(x))
+
+class SEResidualBlocks(nn.Module):
+    def __init__(self, c1, c2, n=1, ratio=16):
+        super().__init__()
+        self.m = nn.Sequential(*[SEResidualBlock(c1, c2, ratio) for _ in range(n)])
+    
+    def forward(self, x):
+        return self.m(x)
 
 class EfficientBlock(nn.Module):
     def __init__(self, c1, c2, expand=6, ratio=16, stride=1, act=True):
