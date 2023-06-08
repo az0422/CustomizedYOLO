@@ -84,6 +84,16 @@ class ResidualBlocks(nn.Module):
     def forward(self, x):
         return self.m(x)
 
+class ResidualBlocks2(nn.Module):
+    def __init__(self, c1, c2, n=1, e=1.0):
+        super().__init__()
+        res = [ResidualBlock(c1, c2, e) for _ in range(n)]
+        res.append(Conv(c1, c2, 1, 1, None, 1, 1, True))
+        self.m = nn.Sequential(*res)
+    
+    def forward(self, x):
+        return self.m(x)
+
 class SEBlock(nn.Module):
     def __init__(self, c1, ratio=16):
         super(SEBlock, self).__init__()
@@ -119,6 +129,16 @@ class SEResidualBlocks(nn.Module):
     def __init__(self, c1, c2, n=1, ratio=16):
         super().__init__()
         self.m = nn.Sequential(*[SEResidualBlock(c1, c2, ratio) for _ in range(n)])
+    
+    def forward(self, x):
+        return self.m(x)
+
+class SEResidualBlocks2(nn.Module):
+    def __init__(self, c1, c2, n=1, ratio=16):
+        super().__init__()
+        res = [SEResidualBlock(c1, c2, ratio) for _ in range(n)]
+        res.append(Conv(c1, c2, 1, 1, None, 1, 1, True))
+        self.m = nn.Sequential(*res)
     
     def forward(self, x):
         return self.m(x)
