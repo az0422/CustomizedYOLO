@@ -22,7 +22,8 @@ from .transformer import (AIFI, MLP, DeformableTransformerDecoder, DeformableTra
                           MLPBlock, MSDeformAttn, TransformerBlock, TransformerEncoderLayer, TransformerLayer)
 from .custom import (Groups, GroupsF, Shortcut, ResidualBlock, ResidualBlocks, SEBlock, EfficientBlock, PoolResidualBlock,
                      PoolResidualBlocks, InceptionBlock, SPPCSP, SPPFCSP, SPPFCSPF, DetectCustomv1, BottleneckCSP2,
-                     Bagging, MobileBlock, SEResidualBlock, SEResidualBlocks, ResidualBlocks2, SEResidualBlocks2)
+                     Bagging, MobileBlock, SEResidualBlock, SEResidualBlocks, ResidualBlocks2, SEResidualBlocks2,
+                     XceptionBlock)
 
 __all__ = ['Conv', 'Conv2', 'LightConv', 'RepConv', 'DWConv', 'DWConvTranspose2d', 'ConvTranspose', 'Focus',
            'GhostConv', 'ChannelAttention', 'SpatialAttention', 'CBAM', 'Concat', 'TransformerLayer',
@@ -33,4 +34,5 @@ __all__ = ['Conv', 'Conv2', 'LightConv', 'RepConv', 'DWConv', 'DWConvTranspose2d
 
 __all__ += ['Groups', 'GroupsF', 'Shortcut', 'ResidualBlock', 'ResidualBlocks', 'SEBlock', 'EfficientBlock', 'PoolResidualBlock',
             'PoolResidualBlocks', 'InceptionBlock', 'SPPCSP', 'SPPFCSP', 'SPPFCSPF', 'DetectCustomv1', 'BottleneckCSP2',
-            'Bagging', "MobileBlock", "SEResidualBlock", "SEResidualBlocks", "ResidualBlocks2", "SEResidualBlocks2"]
+            'Bagging', "MobileBlock", "SEResidualBlock", "SEResidualBlocks", "ResidualBlocks2", "SEResidualBlocks2",
+            "XceptionBlock"]
