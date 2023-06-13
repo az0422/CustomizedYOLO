@@ -94,6 +94,23 @@ class ResidualBlocks2(nn.Module):
     def forward(self, x):
         return self.m(x)
 
+class CSPResidualBlocks(nn.Module):
+    def __init__(self, c1, c2, n=1, e=1.0, act=True):
+        super().__init__()
+        self.conv1 = Conv(c1, c2 // 2, 1, 1)
+        self.conv2 = Conv(c1, c2 // 2, 1, 1)
+        self.conv3 = Conv(c2, c2, 1, 1)
+        
+        self.m = nn.Sequential(*[ResidualBlock(c2 // 2, c2 // 2, e, act) for _ in range(n)])
+    
+    def forward(self, x):
+        x1 = self.conv1(x)
+        x2 = self.conv2(x)
+        
+        y = self.m(x2)
+        
+        return self.conv3(torch.cat([x1, y], axis=1))
+
 class SEBlock(nn.Module):
     def __init__(self, c1, ratio=16):
         super(SEBlock, self).__init__()
