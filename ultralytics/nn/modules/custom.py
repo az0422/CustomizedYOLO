@@ -224,6 +224,22 @@ class InceptionBlock(nn.Module):
         y4 = self.conv7(x)
         return torch.cat([y1, y2, y3, y4], axis=1)
 
+class CSPInceptionBlock(nn.Module):
+    def __init__(self, c1, c2, act=True):
+        super().__init__()
+        
+        self.conv1 = Conv(c1, c2 // 2, 1, 1, act=act)
+        self.conv2 = Conv(c1, c2 // 2, 1, 1, act=act)
+        self.inception = InceptionBlock(c2 // 2, c2 // 2, act)
+        
+        self.conv3 = Conv(c2, c2, 1, 1, act=act)
+    
+    def forward(self, x):
+        x1 = self.conv1(x)
+        x2 = self.conv2(x)
+        y1 = self.inception(x2)
+        return self.conv3(torch.cat([x1, y1], axis=1))
+
 class XceptionBlock(nn.Module):
     def __init__(self, c1, c2, ratio=4, act=True):
         super().__init__()
@@ -234,6 +250,22 @@ class XceptionBlock(nn.Module):
     def forward(self, x):
         return self.conv2(self.conv1(x))
 
+class CSPXceptionBlock(nn.Module):
+    def __init__(self, c1, c2, ratio=4, act=True):
+        super().__init__()
+        
+        self.conv1 = Conv(c1, c2 // 2, 1, 1, act=act)
+        self.conv2 = Conv(c1, c2 // 2, 1, 1, act=act)
+        self.xception = XceptionBlock(c2 // 2, c2 // 2, ratio, act)
+        
+        self.conv3 = Conv(c2, c2, 1, 1, act=act)
+    
+    def forward(self, x):
+        x1 = self.conv1(x)
+        x2 = self.conv2(x)
+        y1 = self.xception(x2)
+        return self.conv3(torch.concat([x1, y1], axis=1))
+
 class MobileBlock(nn.Module):
     def __init__(self, c1, c2, stride=1, act=True):
         super().__init__()
@@ -243,6 +275,22 @@ class MobileBlock(nn.Module):
     
     def forward(self, x):
         return self.conv2(self.conv1(x))
+
+class CSPMobileBlock(nn.Module):
+    def __init__(self, c1, c2, act=True):
+        super().__init__()
+        
+        self.conv1 = Conv(c1, c2 // 2, 1, 1, act=act)
+        self.conv2 = Conv(c1, c2 // 2, 1, 1, act=act)
+        self.mobile = MobileBlock(c2 // 2, c2 // 2, act=act)
+        
+        self.conv3 = Conv(c2, c2, 1, 1, act=act)
+    
+    def forward(self, x):
+        x1 = self.conv1(x)
+        x2 = self.conv2(x)
+        y1 = self.mobile(x2)
+        return self.conv3(torch.cat([x1, y1], axis=1))
 
 class SPPCSP(nn.Module):
     def __init__(self, c1, c2, e=1.0, k=(5, 9, 13), act=True):
