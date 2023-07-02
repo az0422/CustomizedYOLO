@@ -201,13 +201,11 @@ class PoolResidualBlock(nn.Module):
         c3 = c1 * expand
         c4 = c1 // shrink
 
-        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, act)
-        self.conv2 = Conv(c3, c4, 1, 1, None, 1, 1, act)
         self.pool = nn.MaxPool2d(5, 1, 2)
-        self.conv3 = Conv(c4, c2, 3, 1, None, 1, 1, act)
+        self.conv = Conv(c4, c2, 3, 1, None, 1, 1, act)
 
     def forward(self, x):
-        return x + self.conv3(self.pool(self.conv2(self.conv1(x))))
+        return x + self.conv(self.pool(x))
 
 class PoolResidualBlocks(nn.Module):
     def __init__(self, c1, c2, n=1, expand=2, shrink=2, act=True):
