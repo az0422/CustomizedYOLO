@@ -70,6 +70,8 @@ class ResidualBlock(nn.Module):
     def __init__(self, c1, c2, e=1.0, act=True):
         super().__init__()
         c3 = int(c1 * e)
+        if c3 < 8: c3 = 8
+        
         self.conv1 = Conv(c1, c3, 1, 1, act=True)
         self.conv2 = Conv(c3, c2, 3, 1, act=True)
 
