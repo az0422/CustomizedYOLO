@@ -169,7 +169,7 @@ class EfficientBlock(nn.Module):
         self.stride = stride
         
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, act)
-        self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1, act)
+        self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1, act)
         self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, None)
         self.se = SEBlock(c3, ratio)
 
