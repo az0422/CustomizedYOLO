@@ -292,9 +292,23 @@ class MobileBlock(nn.Module):
         self.conv2 = Conv(c1, c2, 1, 1, None, 1, 1, act)
     
     def forward(self, x):
-        y = self.conv2(self.conv1(x))
+        return self.conv2(self.conv1(x))
+
+class MobileBlockV2(nn.Module):
+    def __init__(self, c1, c2, stride=1, t=6, act=True):
+        super().__init__()
+        self.stride = stride
+        c3 = c1 * t
         
-        if self.stride == 1: return y + x
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, act)
+        self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1, act)
+        self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, None)
+    
+    def forward(self, x):
+        y = self.conv3(self.conv2(self.conv1(x)))
+        
+        if self.stride == 1 and y.shape[1] == x.shape[1]:
+            return x + y
         
         return y
 
