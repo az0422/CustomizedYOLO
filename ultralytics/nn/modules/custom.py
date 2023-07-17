@@ -294,7 +294,7 @@ class MobileBlock(nn.Module):
     def forward(self, x):
         y = self.conv2(self.conv1(x))
         
-        if stride == 1: return y + x
+        if self.stride == 1: return y + x
         
         return y
 
