@@ -668,13 +668,13 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c2 = ch[f] // args[0]
 
         elif m is InceptionBlock:
-            c2 = args[0]
+            c2 = args[0] * width
             c1 = ch[f]
-            args = [c1, args[0]]
+            args = [c1, c2]
         
         elif m is SEBlock:
-            args = [c1, *args]
-            c2 = c1
+            c2 = c1 * width
+            args = [c2, *args]
             
         elif m in (EfficientBlock, SPPCSP, SPPFCSP, SPPFCSPF, ResidualBlocks, ResidualBlock,
                    PoolResidualBlock, PoolResidualBlocks, MobileBlock, SEResidualBlock,
