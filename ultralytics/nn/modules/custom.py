@@ -294,7 +294,7 @@ class MobileBlock(nn.Module):
     def forward(self, x):
         return self.conv2(self.conv1(x))
 
-class MobileBlockV2(nn.Module):
+class MobileBlockv2(nn.Module):
     def __init__(self, c1, c2, stride=1, t=6, act=True):
         super().__init__()
         self.stride = stride
