@@ -286,12 +286,17 @@ class CSPXceptionBlock(nn.Module):
 class MobileBlock(nn.Module):
     def __init__(self, c1, c2, stride=1, act=True):
         super().__init__()
+        self.stride = stride
         
         self.conv1 = Conv(c1, c1, 3, stride, None, c1, 1, act)
         self.conv2 = Conv(c1, c2, 1, 1, None, 1, 1, act)
     
     def forward(self, x):
-        return self.conv2(self.conv1(x))
+        y = self.conv2(self.conv1(x))
+        
+        if stride == 1: return y + x
+        
+        return y
 
 class CSPMobileBlock(nn.Module):
     def __init__(self, c1, c2, act=True):
