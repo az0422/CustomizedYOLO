@@ -67,43 +67,43 @@ class BottleneckCSP2(nn.Module):
         return self.cv3(self.act(self.bn(torch.cat((y1, y2), dim=1))))
 
 class ResidualBlock(nn.Module):
-    def __init__(self, c1, c2, e=1.0, act=True):
+    def __init__(self, c1, c2, e=1.0):
         super().__init__()
         c3 = int(c1 * e)
         if c3 < 8: c3 = 8
         
-        self.conv1 = Conv(c1, c3, 1, 1, act=True)
-        self.conv2 = Conv(c3, c2, 3, 1, act=True)
+        self.conv1 = Conv(c1, c3, 1, 1)
+        self.conv2 = Conv(c3, c2, 3, 1)
 
     def forward(self, x):
         return x + self.conv2(self.conv1(x))
 
 class ResidualBlocks(nn.Module):
-    def __init__(self, c1, c2, n=1, e=1.0, act=True):
+    def __init__(self, c1, c2, n=1, e=1.0):
         super().__init__()
-        self.m = nn.Sequential(*[ResidualBlock(c1, c2, e, act) for _ in range(n)])
+        self.m = nn.Sequential(*[ResidualBlock(c1, c2, e) for _ in range(n)])
 
     def forward(self, x):
         return self.m(x)
 
 class ResidualBlocks2(nn.Module):
-    def __init__(self, c1, c2, n=1, e=1.0, act=True):
+    def __init__(self, c1, c2, n=1, e=1.0):
         super().__init__()
-        res = [ResidualBlock(c1, c2, e, act) for _ in range(n)]
-        res.append(Conv(c1, c2, 1, 1, None, 1, 1, act))
+        res = [ResidualBlock(c1, c2, e) for _ in range(n)]
+        res.append(Conv(c1, c2, 1, 1, None, 1, 1))
         self.m = nn.Sequential(*res)
     
     def forward(self, x):
         return self.m(x)
 
 class CSPResidualBlocks(nn.Module):
-    def __init__(self, c1, c2, n=1, e=1.0, act=True):
+    def __init__(self, c1, c2, n=1, e=1.0):
         super().__init__()
         self.conv1 = Conv(c1, c2 // 2, 1, 1)
         self.conv2 = Conv(c1, c2 // 2, 1, 1)
         self.conv3 = Conv(c2, c2, 1, 1)
         
-        self.m = nn.Sequential(*[ResidualBlock(c2 // 2, c2 // 2, e, act) for _ in range(n)])
+        self.m = nn.Sequential(*[ResidualBlock(c2 // 2, c2 // 2, e) for _ in range(n)])
     
     def forward(self, x):
         x1 = self.conv1(x)
@@ -136,40 +136,40 @@ class SEBlock(nn.Module):
         return x * y
 
 class SEResidualBlock(nn.Module):
-    def __init__(self, c1, c2, ratio=16, act=True):
+    def __init__(self, c1, c2, ratio=16):
         super().__init__()
         self.se = SEBlock(c1, ratio)
-        self.conv = Conv(c1, c2, 3, 1, None, 1, 1, act)
+        self.conv = Conv(c1, c2, 3, 1, None, 1, 1)
     
     def forward(self, x):
         return x + self.conv(self.se(x))
 
 class SEResidualBlocks(nn.Module):
-    def __init__(self, c1, c2, n=1, ratio=16, act=True):
+    def __init__(self, c1, c2, n=1, ratio=16):
         super().__init__()
-        self.m = nn.Sequential(*[SEResidualBlock(c1, c2, ratio, act) for _ in range(n)])
+        self.m = nn.Sequential(*[SEResidualBlock(c1, c2, ratio) for _ in range(n)])
     
     def forward(self, x):
         return self.m(x)
 
 class SEResidualBlocks2(nn.Module):
-    def __init__(self, c1, c2, n=1, ratio=16, act=True):
+    def __init__(self, c1, c2, n=1, ratio=16):
         super().__init__()
         res = [SEResidualBlock(c1, c2, ratio) for _ in range(n)]
-        res.append(Conv(c1, c2, 1, 1, None, 1, 1, act))
+        res.append(Conv(c1, c2, 1, 1, None, 1, 1))
         self.m = nn.Sequential(*res)
     
     def forward(self, x):
         return self.m(x)
 
 class EfficientBlock(nn.Module):
-    def __init__(self, c1, c2, expand=6, ratio=16, stride=1, act=True):
+    def __init__(self, c1, c2, expand=6, ratio=16, stride=1):
         super().__init__()
         c3 = int(c1 * expand)
         self.stride = stride
         
-        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, act)
-        self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1, act)
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
+        self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1)
         self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, None)
         self.se = SEBlock(c3, ratio)
 
@@ -181,14 +181,14 @@ class EfficientBlock(nn.Module):
         return y
 
 class CSPEfficientBlock(nn.Module):
-    def __init__(self, c1, c2, expand=6, ratio=16, act=True):
+    def __init__(self, c1, c2, expand=6, ratio=16):
         super().__init__()
         
-        self.conv1 = Conv(c1, c2 // 2, 1, 1, act=act)
-        self.conv2 = Conv(c1, c2 // 2, 1, 1, act=act)
-        self.efficient = EfficientBlock(c2 // 2, c2 // 2, expand, ratio, 1, act)
+        self.conv1 = Conv(c1, c2 // 2, 1, 1)
+        self.conv2 = Conv(c1, c2 // 2, 1, 1)
+        self.efficient = EfficientBlock(c2 // 2, c2 // 2, expand, ratio, 1)
         
-        self.conv3 = Conv(c2, c2, 1, 1, act=act)
+        self.conv3 = Conv(c2, c2, 1, 1)
     
     def forward(self, x):
         x1 = self.conv1(x)
@@ -198,41 +198,41 @@ class CSPEfficientBlock(nn.Module):
         return self.conv3(torch.cat([x1, y1], axis=1))
 
 class PoolResidualBlock(nn.Module):
-    def __init__(self, c1, c2, expand=2, shrink=2, act=True):
+    def __init__(self, c1, c2, expand=2, shrink=2):
         super().__init__()
         c3 = c1 * expand
         c4 = c1 // shrink
 
         self.pool = nn.MaxPool2d(5, 1, 2)
-        self.conv = Conv(c4, c2, 3, 1, None, 1, 1, act)
+        self.conv = Conv(c4, c2, 3, 1, None, 1, 1)
 
     def forward(self, x):
         return x + self.conv(self.pool(x))
 
 class PoolResidualBlocks(nn.Module):
-    def __init__(self, c1, c2, n=1, expand=2, shrink=2, act=True):
+    def __init__(self, c1, c2, n=1, expand=2, shrink=2):
         super().__init__()
-        self.m = nn.Sequential(*[PoolResidualBlock(c1, c2, expand, shrink, act) for _ in range(n)])
+        self.m = nn.Sequential(*[PoolResidualBlock(c1, c2, expand, shrink) for _ in range(n)])
 
     def forward(self, x):
         return self.m(x)
 
 class InceptionBlock(nn.Module):
-    def __init__(self, c1, c2, act=True):
+    def __init__(self, c1, c2):
         c3 = c2 // 4
         
         super().__init__()
-        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, act)
-        self.conv2 = Conv(c3, c3, 3, 1, None, 1, 1, act)
-        self.conv3 = Conv(c3, c3, 3, 1, None, 1, 1, act)
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
+        self.conv2 = Conv(c3, c3, 3, 1, None, 1, 1)
+        self.conv3 = Conv(c3, c3, 3, 1, None, 1, 1)
 
-        self.conv4 = Conv(c1, c3, 1, 1, None, 1, 1, act)
-        self.conv5 = Conv(c3, c3, 3, 1, None, 1, 1, act)
+        self.conv4 = Conv(c1, c3, 1, 1, None, 1, 1)
+        self.conv5 = Conv(c3, c3, 3, 1, None, 1, 1)
 
         self.pool = nn.MaxPool2d(5, 1, 2)
-        self.conv6 = Conv(c1, c3, 1, 1, None, 1, 1, act)
+        self.conv6 = Conv(c1, c3, 1, 1, None, 1, 1)
 
-        self.conv7 = Conv(c1, c3, 1, 1, None, 1, 1, act)
+        self.conv7 = Conv(c1, c3, 1, 1, None, 1, 1)
 
     def forward(self, x):
         y1 = self.conv3(self.conv2(self.conv1(x)))
@@ -242,14 +242,14 @@ class InceptionBlock(nn.Module):
         return torch.cat([y1, y2, y3, y4], axis=1)
 
 class CSPInceptionBlock(nn.Module):
-    def __init__(self, c1, c2, act=True):
+    def __init__(self, c1, c2):
         super().__init__()
         
-        self.conv1 = Conv(c1, c2 // 2, 1, 1, act=act)
-        self.conv2 = Conv(c1, c2 // 2, 1, 1, act=act)
-        self.inception = InceptionBlock(c2 // 2, c2 // 2, act)
+        self.conv1 = Conv(c1, c2 // 2, 1, 1)
+        self.conv2 = Conv(c1, c2 // 2, 1, 1)
+        self.inception = InceptionBlock(c2 // 2, c2 // 2)
         
-        self.conv3 = Conv(c2, c2, 1, 1, act=act)
+        self.conv3 = Conv(c2, c2, 1, 1)
     
     def forward(self, x):
         x1 = self.conv1(x)
@@ -258,24 +258,24 @@ class CSPInceptionBlock(nn.Module):
         return self.conv3(torch.cat([x1, y1], axis=1))
 
 class XceptionBlock(nn.Module):
-    def __init__(self, c1, c2, ratio=4, act=True):
+    def __init__(self, c1, c2, ratio=4):
         super().__init__()
         
-        self.conv1 = Conv(c1, c2, 1, 1, None, 1, 1, act)
-        self.conv2 = Conv(c2, c2, 1, 1, None, c2 // ratio, 1, act)
+        self.conv1 = Conv(c1, c2, 1, 1, None, 1, 1)
+        self.conv2 = Conv(c2, c2, 1, 1, None, c2 // ratio, 1)
         
     def forward(self, x):
         return self.conv2(self.conv1(x))
 
 class CSPXceptionBlock(nn.Module):
-    def __init__(self, c1, c2, ratio=4, act=True):
+    def __init__(self, c1, c2, ratio=4):
         super().__init__()
         
-        self.conv1 = Conv(c1, c2 // 2, 1, 1, act=act)
-        self.conv2 = Conv(c1, c2 // 2, 1, 1, act=act)
-        self.xception = XceptionBlock(c2 // 2, c2 // 2, ratio, act)
+        self.conv1 = Conv(c1, c2 // 2, 1, 1)
+        self.conv2 = Conv(c1, c2 // 2, 1, 1)
+        self.xception = XceptionBlock(c2 // 2, c2 // 2, ratio)
         
-        self.conv3 = Conv(c2, c2, 1, 1, act=act)
+        self.conv3 = Conv(c2, c2, 1, 1)
     
     def forward(self, x):
         x1 = self.conv1(x)
@@ -284,24 +284,24 @@ class CSPXceptionBlock(nn.Module):
         return self.conv3(torch.concat([x1, y1], axis=1))
 
 class MobileBlock(nn.Module):
-    def __init__(self, c1, c2, stride=1, act=True):
+    def __init__(self, c1, c2, stride=1):
         super().__init__()
         self.stride = stride
         
-        self.conv1 = Conv(c1, c1, 3, stride, None, c1, 1, act)
-        self.conv2 = Conv(c1, c2, 1, 1, None, 1, 1, act)
+        self.conv1 = Conv(c1, c1, 3, stride, None, c1, 1)
+        self.conv2 = Conv(c1, c2, 1, 1, None, 1, 1)
     
     def forward(self, x):
         return self.conv2(self.conv1(x))
 
 class MobileBlockv2(nn.Module):
-    def __init__(self, c1, c2, stride=1, t=6, act=True):
+    def __init__(self, c1, c2, stride=1, t=6):
         super().__init__()
         self.stride = stride
         c3 = c1 * t
         
-        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1, act)
-        self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1, act)
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
+        self.conv2 = Conv(c3, c3, 3, stride, None, c3, 1)
         self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1, None)
     
     def forward(self, x):
@@ -313,14 +313,14 @@ class MobileBlockv2(nn.Module):
         return y
 
 class CSPMobileBlock(nn.Module):
-    def __init__(self, c1, c2, act=True):
+    def __init__(self, c1, c2):
         super().__init__()
         
-        self.conv1 = Conv(c1, c2 // 2, 1, 1, act=act)
-        self.conv2 = Conv(c1, c2 // 2, 1, 1, act=act)
-        self.mobile = MobileBlock(c2 // 2, c2 // 2, act=act)
+        self.conv1 = Conv(c1, c2 // 2, 1, 1)
+        self.conv2 = Conv(c1, c2 // 2, 1, 1)
+        self.mobile = MobileBlock(c2 // 2, c2 // 2)
         
-        self.conv3 = Conv(c2, c2, 1, 1, act=act)
+        self.conv3 = Conv(c2, c2, 1, 1)
     
     def forward(self, x):
         x1 = self.conv1(x)
@@ -329,14 +329,14 @@ class CSPMobileBlock(nn.Module):
         return self.conv3(torch.cat([x1, y1], axis=1))
 
 class SPPCSP(nn.Module):
-    def __init__(self, c1, c2, e=1.0, k=(5, 9, 13), act=True):
+    def __init__(self, c1, c2, e=1.0, k=(5, 9, 13)):
         super().__init__()
         c3 = int(c2 * e)
 
-        self.cv1 = Conv(c1, c3, 1, 1, act=act)
-        self.cv2 = Conv(c1, c3, 1, 1, act=act)
-        self.cv3 = Conv(c3 * 4, c3, 1, 1, act=act)
-        self.cv4 = Conv(c3 * 2, c2, 1, 1, act=act)
+        self.cv1 = Conv(c1, c3, 1, 1)
+        self.cv2 = Conv(c1, c3, 1, 1)
+        self.cv3 = Conv(c3 * 4, c3, 1, 1)
+        self.cv4 = Conv(c3 * 2, c2, 1, 1)
 
         self.m1 = nn.MaxPool2d(kernel_size=k[0], stride=1, padding=k[0] // 2)
         self.m2 = nn.MaxPool2d(kernel_size=k[1], stride=1, padding=k[1] // 2)
@@ -352,14 +352,14 @@ class SPPCSP(nn.Module):
         return self.cv4(torch.cat([x2, y1], 1))
 
 class SPPFCSP(nn.Module):
-    def __init__(self, c1, c2, e=1.0, k=5, act=True):
+    def __init__(self, c1, c2, e=1.0, k=5):
         super().__init__()
         c3 = int(c2 * e)
 
-        self.conv1 = Conv(c1, c3, 1, 1, act=act)
-        self.conv2 = Conv(c1, c3, 1, 1, act=act)
-        self.conv3 = Conv(c3 * 4, c3, 1, 1, act=act)
-        self.conv4 = Conv(c3 * 2, c2, 1, 1, act=act)
+        self.conv1 = Conv(c1, c3, 1, 1)
+        self.conv2 = Conv(c1, c3, 1, 1)
+        self.conv3 = Conv(c3 * 4, c3, 1, 1)
+        self.conv4 = Conv(c3 * 2, c2, 1, 1)
 
         self.m = nn.MaxPool2d(kernel_size=k, stride=1, padding=k // 2)
 
@@ -372,13 +372,13 @@ class SPPFCSP(nn.Module):
         return self.conv4(torch.cat([x1, self.conv3(torch.cat([x2, y1, y2, y3], 1))], 1))
 
 class SPPFCSPF(nn.Module):
-    def __init__(self, c1, c2, e=1.0, k=5, act=True):
+    def __init__(self, c1, c2, e=1.0, k=5):
         super().__init__()
         c3 = int(c2 * e)
 
-        self.conv1 = Conv(c1, c3, 1, 1, act=act)
-        self.conv2 = Conv(c1, c3, 1, 1, act=act)
-        self.conv3 = Conv(c3 * 5, c2, 1, 1, act=act)
+        self.conv1 = Conv(c1, c3, 1, 1)
+        self.conv2 = Conv(c1, c3, 1, 1)
+        self.conv3 = Conv(c3 * 5, c2, 1, 1)
 
         self.m = nn.MaxPool2d(kernel_size=k, stride=1, padding=k // 2)
 
