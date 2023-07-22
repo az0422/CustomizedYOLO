@@ -262,7 +262,7 @@ class XceptionBlock(nn.Module):
         super().__init__()
         
         self.conv1 = Conv(c1, c2, 1, 1, None, 1, 1)
-        self.conv2 = Conv(c2, c2, 1, 1, None, c2 // ratio, 1)
+        self.conv2 = Conv(c2, c2, 3, 1, None, c2 // ratio, 1)
         
     def forward(self, x):
         return self.conv2(self.conv1(x))
