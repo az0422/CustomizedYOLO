@@ -684,9 +684,6 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c1, c2 = ch[f], make_divisible(min(args[0], max_channels) * width, 8)
             args = [c1, c2, *args[1:]]
             
-            if m in (XceptionBlock, CSPXceptionBlock):
-                args[2] = make_divisible(args[2] * width, 8)
-
             if m in (ResidualBlocks, PoolResidualBlocks, SEResidualBlocks, ResidualBlocks2,
                      SEResidualBlocks2, CSPResidualBlocks):
                 args.insert(2, n)
