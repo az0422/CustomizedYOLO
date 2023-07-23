@@ -164,13 +164,11 @@ class SEResidualBlocks2(nn.Module):
     
     
 class PoolResidualBlock(nn.Module):
-    def __init__(self, c1, c2, expand=2, shrink=2):
+    def __init__(self, c1, c2, pool_kernel=5):
         super().__init__()
-        c3 = c1 * expand
-        c4 = c1 // shrink
 
-        self.pool = nn.MaxPool2d(5, 1, 2)
-        self.conv = Conv(c4, c2, 3, 1, None, 1, 1)
+        self.pool = nn.MaxPool2d(pool_kernel, 1, pool_kernel // 2)
+        self.conv = Conv(c1, c2, 3, 1, None, 1, 1)
 
     def forward(self, x):
         return x + self.conv(self.pool(x))
