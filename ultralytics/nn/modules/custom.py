@@ -174,9 +174,9 @@ class PoolResidualBlock(nn.Module):
         return x + self.conv(self.pool(x))
 
 class PoolResidualBlocks(nn.Module):
-    def __init__(self, c1, c2, n=1, expand=2, shrink=2):
+    def __init__(self, c1, c2, n=1, pool_kernel=5):
         super().__init__()
-        self.m = nn.Sequential(*[PoolResidualBlock(c1, c2, expand, shrink) for _ in range(n)])
+        self.m = nn.Sequential(*[PoolResidualBlock(c1, c2, pool_kernel) for _ in range(n)])
 
     def forward(self, x):
         return self.m(x)
