@@ -161,7 +161,49 @@ class SEResidualBlocks2(nn.Module):
     
     def forward(self, x):
         return self.m(x)
+    
+    
+class PoolResidualBlock(nn.Module):
+    def __init__(self, c1, c2, expand=2, shrink=2):
+        super().__init__()
+        c3 = c1 * expand
+        c4 = c1 // shrink
 
+        self.pool = nn.MaxPool2d(5, 1, 2)
+        self.conv = Conv(c4, c2, 3, 1, None, 1, 1)
+
+    def forward(self, x):
+        return x + self.conv(self.pool(x))
+
+class PoolResidualBlocks(nn.Module):
+    def __init__(self, c1, c2, n=1, expand=2, shrink=2):
+        super().__init__()
+        self.m = nn.Sequential(*[PoolResidualBlock(c1, c2, expand, shrink) for _ in range(n)])
+
+    def forward(self, x):
+        return self.m(x)
+
+class DWResidualBlock(nn.Module):
+    def __init__(self, c1, c2, expand=1.0, dwratio=1):
+        super().__init__()
+        c3 = int(c1 * expand)
+        
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
+        self.conv2 = Conv(c3, c2, 3, 1, None, c3 // dwratio, 1)
+        self.conv3 = Conv(c2, c2, 1, 1, None, 1, 1)
+    
+    def forward(self, x):
+        return x + self.conv3(self.conv2(self.conv1(x)))
+
+class DWResidualBlocks(nn.Module):
+    def __init__(self, c1, c2, n=1, expand=1.0, dwratio=1):
+        super().__init__()
+        
+        self.m = nn.Sequential(*[DWResidualBlock(c1, c2, expand, dwratio) for _ in range(n)])
+    
+    def forward(self, x):
+        return self.m(x)
+        
 class EfficientBlock(nn.Module):
     def __init__(self, c1, c2, expand=6, ratio=16, stride=1):
         super().__init__()
@@ -196,26 +238,6 @@ class CSPEfficientBlock(nn.Module):
         y1 = self.efficient(x2)
         
         return self.conv3(torch.cat([x1, y1], axis=1))
-
-class PoolResidualBlock(nn.Module):
-    def __init__(self, c1, c2, expand=2, shrink=2):
-        super().__init__()
-        c3 = c1 * expand
-        c4 = c1 // shrink
-
-        self.pool = nn.MaxPool2d(5, 1, 2)
-        self.conv = Conv(c4, c2, 3, 1, None, 1, 1)
-
-    def forward(self, x):
-        return x + self.conv(self.pool(x))
-
-class PoolResidualBlocks(nn.Module):
-    def __init__(self, c1, c2, n=1, expand=2, shrink=2):
-        super().__init__()
-        self.m = nn.Sequential(*[PoolResidualBlock(c1, c2, expand, shrink) for _ in range(n)])
-
-    def forward(self, x):
-        return self.m(x)
 
 class InceptionBlock(nn.Module):
     def __init__(self, c1, c2):

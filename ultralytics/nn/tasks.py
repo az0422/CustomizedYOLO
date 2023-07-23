@@ -680,12 +680,12 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                    PoolResidualBlock, PoolResidualBlocks, MobileBlock, SEResidualBlock,
                    SEResidualBlocks, ResidualBlocks2, SEResidualBlocks2, XceptionBlock,
                    CSPResidualBlocks, CSPInceptionBlock, CSPXceptionBlock, CSPMobileBlock,
-                   CSPEfficientBlock, MobileBlockv2):
+                   CSPEfficientBlock, MobileBlockv2, DWResidualBlock, DWResidualBlocks):
             c1, c2 = ch[f], make_divisible(min(args[0], max_channels) * width, 8)
             args = [c1, c2, *args[1:]]
             
             if m in (ResidualBlocks, PoolResidualBlocks, SEResidualBlocks, ResidualBlocks2,
-                     SEResidualBlocks2, CSPResidualBlocks):
+                     SEResidualBlocks2, CSPResidualBlocks, DWResidualBlocks):
                 args.insert(2, n)
                 n = 1
         else:
