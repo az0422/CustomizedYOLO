@@ -188,10 +188,9 @@ class DWResidualBlock(nn.Module):
         
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
         self.conv2 = Conv(c3, c2, 3, 1, None, c3 // dwratio, 1)
-        self.conv3 = Conv(c2, c2, 1, 1, None, 1, 1)
     
     def forward(self, x):
-        return x + self.conv3(self.conv2(self.conv1(x)))
+        return x + self.conv2(self.conv1(x))
 
 class DWResidualBlocks(nn.Module):
     def __init__(self, c1, c2, n=1, expand=1.0, dwratio=1):
