@@ -447,16 +447,21 @@ class SPPFCSPF(nn.Module):
 class HeaderConv(nn.Module):
     def __init__(self, c1, c2):
         super().__init__()
+        c3 = c2 // 2
+        
         self.conv1 = Conv(c1, c2, 3, 1, None, 1, 1)
         
-        self.conv2 = Conv(c2, c2, 1, 1, None, 1, 1)
-        self.conv3 = Conv(c2, c2, 3, 1, None, c2, 1)
-        self.conv4 = Conv(c2, c2, 1, 1, None, 1, 1)
+        self.conv2 = Conv(c2, c3, 1, 1, None, 1, 1)
+        self.conv3 = Conv(c3, c2, 3, 1, None, c3, 1)
+        self.conv4 = Conv(c2, c3, 1, 1, None, 1, 1)
+        self.conv5 = Conv(c3, c2, 3, 1, None, c3, 1)
+        self.conv6 = Conv(c2, c2, 1, 1, None, 1, 1)
     
     def forward(self, x):
         x1 = self.conv1(x)
-        y = self.conv3(self.conv2(x1)) + x1
-        return self.conv4(y)
+        y = self.conv3(self.conv2(x1))
+        y = self.conv5(self.conv4(y)) + x1
+        return self.conv6(y)
 
 class DetectCustomv2(Detect):
     def __init__(self, nc=80, ch=()):
