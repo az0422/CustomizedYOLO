@@ -463,6 +463,27 @@ class HeaderConv(nn.Module):
         y = self.conv5(self.conv4(y)) + x1
         return self.conv6(y)
 
+class DetectCustomv2Lite(Detect):
+    def __init__(self, nc=80, ch=()):
+        super().__init__(nc, ch)
+        
+        c2, c3 = max((16, ch[0] // 4, self.reg_max * 4)), max(ch[0], self.nc)  # channels
+        self.cv2 = nn.ModuleList(
+            nn.Sequential(
+                Conv(x, c2, 3, 1, None, 1, 1),
+                Conv(c2, c2, 3, 1, None, c2, 1),
+                nn.Conv2d(c2, 4 * self.reg_max, 1)
+            ) for x in ch
+        )
+        
+        self.cv3 = nn.ModuleList(
+            nn.Sequential(
+                Conv(x, c3, 3, 1, None, 1, 1),
+                Conv(c3, c3, 3, 1, None, c3, 1),
+                nn.Conv2d(c3, self.nc, 1)
+            ) for x in ch
+        )
+
 class DetectCustomv2(Detect):
     def __init__(self, nc=80, ch=()):
         super().__init__(nc, ch)
