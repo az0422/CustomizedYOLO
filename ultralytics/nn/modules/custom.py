@@ -113,6 +113,39 @@ class CSPResidualBlocks(nn.Module):
         
         return self.conv3(torch.cat([x1, y], axis=1))
 
+class FuseResidualBlock(nn.Module):
+    def __init__(self, c1, c2, e=1.0):
+        super().__init__()
+        c3 = int(c1 * e)
+        if c3 < 8: c3 = 8
+        
+        self.conv1 = Conv(c1, c3, 1, 1)
+        self.conv2 = Conv(c3, c2, 3, 1)
+
+    def forward(self, x):
+        return x + self.conv2(self.conv1(x))
+    
+    def forward_fuse(self, x):
+        return self.conv2(self.conv1(x))
+
+class FuseResidualBlocks(nn.Module):
+    def __init__(self, c1, c2, n=1, e=1.0):
+        super().__init__()
+        self.m = nn.Sequential(*[FuseResidualBlock(c1, c2, e) for _ in range(n)])
+
+    def forward(self, x):
+        return self.m(x)
+
+class FuseResidualBlocks2(nn.Module):
+    def __init__(self, c1, c2, n=1, e=1.0):
+        super().__init__()
+        res = [FuseResidualBlock(c1, c2, e) for _ in range(n)]
+        res.append(Conv(c1, c2, 1, 1, None, 1, 1))
+        self.m = nn.Sequential(*res)
+    
+    def forward(self, x):
+        return self.m(x)
+
 class SEBlock(nn.Module):
     def __init__(self, c1, ratio=16):
         super(SEBlock, self).__init__()
@@ -411,16 +444,42 @@ class SPPFCSPF(nn.Module):
 
 # ------------------------------------------------------------------------------
 
-class DetectCustomv1(nn.Module):
-    """YOLOv8 Detect head for detection models."""
-    dynamic = False  # force grid reconstruction
-    export = False  # export mode
-    shape = None
-    anchors = torch.empty(0)  # init
-    strides = torch.empty(0)  # init
-
-    def __init__(self, nc=80, res_depth_1=3, res_depth_2=3, reg_max=16, ch=()):  # detection layer
+class HeaderConv(nn.Module):
+    def __init__(self, c1, c2):
         super().__init__()
+        self.conv1 = Conv(c1, c2, 3, 1, None, 1, 1)
+        
+        self.conv2 = Conv(c2, c2, 1, 1, None, 1, 1)
+        self.conv3 = Conv(c2, c2, 3, 1, None, c2, 1)
+        self.conv4 = Conv(c2, c2, 1, 1, None, 1, 1)
+    
+    def forward(self, x):
+        x1 = self.conv1(x)
+        y = self.conv3(self.conv2(x1)) + x1
+        return self.conv4(y)
+
+class DetectCustomv2(Detect):
+    def __init__(self, nc=80, ch=()):
+        super().__init__(nc, ch)
+        
+        c2, c3 = max((16, ch[0] // 4, self.reg_max * 4)), max(ch[0], self.nc)  # channels
+        self.cv2 = nn.ModuleList(
+            nn.Sequential(
+                HeaderConv(x, c2),
+                nn.Conv2d(c2, 4 * self.reg_max, 1)
+            ) for x in ch
+        )
+
+        self.cv3 = nn.ModuleList(
+            nn.Sequential(
+                HeaderConv(x, c3),
+                nn.Conv2d(c3, self.nc, 1)
+            ) for x in ch
+        )
+        
+class DetectCustomv1(Detect):
+    def __init__(self, nc=80, res_depth_1=3, res_depth_2=3, reg_max=16, ch=()):  # detection layer
+        super().__init__(nc, ch)
         self.nc = nc  # number of classes
         self.nl = len(ch)  # number of detection layers
         self.reg_max = reg_max  # DFL channels (ch[0] // 16 to scale 4/8/12/16/20 for n/s/m/l/x)
@@ -447,33 +506,3 @@ class DetectCustomv1(nn.Module):
         )
 
         self.dfl = DFL(self.reg_max) if self.reg_max > 1 else nn.Identity()
-
-    def forward(self, x):
-        """Concatenates and returns predicted bounding boxes and class probabilities."""
-        shape = x[0].shape  # BCHW
-        for i in range(self.nl):
-            x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
-        if self.training:
-            return x
-        elif self.dynamic or self.shape != shape:
-            self.anchors, self.strides = (x.transpose(0, 1) for x in make_anchors(x, self.stride, 0.5))
-            self.shape = shape
-
-        x_cat = torch.cat([xi.view(shape[0], self.no, -1) for xi in x], 2)
-        if self.export and self.format in ('saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'):  # avoid TF FlexSplitV ops
-            box = x_cat[:, :self.reg_max * 4]
-            cls = x_cat[:, self.reg_max * 4:]
-        else:
-            box, cls = x_cat.split((self.reg_max * 4, self.nc), 1)
-        dbox = dist2bbox(self.dfl(box), self.anchors.unsqueeze(0), xywh=True, dim=1) * self.strides
-        y = torch.cat((dbox, cls.sigmoid()), 1)
-        return y if self.export else (y, x)
-
-    def bias_init(self):
-        """Initialize Detect() biases, WARNING: requires stride availability."""
-        m = self  # self.model[-1]  # Detect() module
-        # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1
-        # ncf = math.log(0.6 / (m.nc - 0.999999)) if cf is None else torch.log(cf / cf.sum())  # nominal class frequency
-        for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
-            a[-1].bias.data[:] = 1.0  # box
-            b[-1].bias.data[:m.nc] = math.log(5 / m.nc / (640 / s) ** 2)  # cls (.01 objects, 80 classes, 640 img)
