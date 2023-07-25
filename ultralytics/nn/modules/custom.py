@@ -233,6 +233,27 @@ class DWResidualBlocks(nn.Module):
     
     def forward(self, x):
         return self.m(x)
+
+class DWResidualBlock2(nn.Module):
+    def __init__(self, c1, c2, expand=1.0, dwratio=1):
+        super().__init__()
+        c3 = int(c1 * expand)
+        
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
+        self.conv2 = Conv(c3, c3, 3, 1, None, c3 // dwratio, 1)
+        self.conv3 = Conv(c3, c3, 1, 1, None, 1, 1)
+        self.conv4 = Conv(c3, c2, 3, 1, None, c3 // dwratio, 1)
+    
+    def forward(self, x):
+        return x + self.conv4(self.conv3(self.conv2(self.conv1(x))))
+
+class DWResidualBlocks2l(nn.Module):
+    def __init__(self, c1, c2, n=1, expand=1.0, dwratio=1):
+        super().__init__()
+        self.m = nn.Sequential(*[DWResidualBlock2(c1, c2, expand, dwratio) for _ in range(n)])
+    
+    def forward(self, x):
+        return self.m(x)
         
 class EfficientBlock(nn.Module):
     def __init__(self, c1, c2, expand=6, ratio=16, stride=1):
@@ -461,7 +482,7 @@ class HeaderConv(nn.Module):
         y = self.conv3(self.conv2(x1))
         y = self.conv5(self.conv4(y)) + x1
         return self.conv6(y)
-
+    
 class DetectCustomv2Lite(Detect):
     def __init__(self, nc=80, ch=()):
         super().__init__(nc, ch)

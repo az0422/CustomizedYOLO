@@ -25,7 +25,8 @@ from .custom import (Groups, GroupsF, Shortcut, ResidualBlock, ResidualBlocks, S
                      Bagging, MobileBlock, SEResidualBlock, SEResidualBlocks, ResidualBlocks2, SEResidualBlocks2,
                      XceptionBlock, CSPResidualBlocks, CSPInceptionBlock, CSPXceptionBlock, CSPMobileBlock,
                      CSPEfficientBlock, MobileBlockv2, DWResidualBlock, DWResidualBlocks, FuseResidualBlock,
-                     FuseResidualBlocks, FuseResidualBlocks2, DetectCustomv2, DetectCustomv2Lite)
+                     FuseResidualBlocks, FuseResidualBlocks2, DetectCustomv2, DetectCustomv2Lite,
+                     DWResidualBlock2, DWResidualBlocks2l)
 
 __all__ = ['Conv', 'Conv2', 'LightConv', 'RepConv', 'DWConv', 'DWConvTranspose2d', 'ConvTranspose', 'Focus',
            'GhostConv', 'ChannelAttention', 'SpatialAttention', 'CBAM', 'Concat', 'TransformerLayer',
@@ -39,4 +40,5 @@ __all__ += ['Groups', 'GroupsF', 'Shortcut', 'ResidualBlock', 'ResidualBlocks', 
             'Bagging', "MobileBlock", "SEResidualBlock", "SEResidualBlocks", "ResidualBlocks2", "SEResidualBlocks2",
             "XceptionBlock", "CSPResidualBlocks", "CSPInceptionBlock", "CSPXceptionBlock", "CSPMobileBlock",
             "CSPEfficientBlock", "MobileBlockv2", "DWResidualBlock", "DWResidualBlocks", "FuseResidualBlock",
-            "FuseResidualBlocks", "FuseResidualBlocks2", "DetectCustomv2", "DetectCustomv2Lite"]
+            "FuseResidualBlocks", "FuseResidualBlocks2", "DetectCustomv2", "DetectCustomv2Lite",
+            "DWResidualBlock2", "DWResidualBlocks2l"]
