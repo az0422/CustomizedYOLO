@@ -229,7 +229,8 @@ class DWResidualBlocks(nn.Module):
     def __init__(self, c1, c2, n=1, expand=1.0, dwratio=1):
         super().__init__()
         
-        self.m = nn.Sequential(*[DWResidualBlock(c1, c2, expand, dwratio) for _ in range(n)])
+        self.m = nn.Sequential(*[DWResidualBlock(c1, c2, expand, dwratio) for _ in range(n)],
+                               Conv(c2, c2, 1, 1, None, 1, 1))
     
     def forward(self, x):
         return self.m(x)
@@ -250,7 +251,8 @@ class DWResidualBlock2(nn.Module):
 class DWResidualBlocks2l(nn.Module):
     def __init__(self, c1, c2, n=1, expand=1.0, dwratio=1):
         super().__init__()
-        self.m = nn.Sequential(*[DWResidualBlock2(c1, c2, expand, dwratio) for _ in range(n)])
+        self.m = nn.Sequential(*[DWResidualBlock2(c1, c2, expand, dwratio) for _ in range(n)],
+                               Conv(c2, c2, 1, 1, None, 1, 1))
     
     def forward(self, x):
         return self.m(x)
