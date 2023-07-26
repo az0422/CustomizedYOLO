@@ -492,6 +492,7 @@ class DetectCustomv2Lite(Detect):
             nn.Sequential(
                 Conv(x, c2, 3, 1, None, 1, 1),
                 Conv(c2, c2, 3, 1, None, c2, 1),
+                Conv(c2, c2, 1, 1, None, 1, 1),
                 nn.Conv2d(c2, 4 * self.reg_max, 1)
             ) for x in ch
         )
@@ -500,6 +501,7 @@ class DetectCustomv2Lite(Detect):
             nn.Sequential(
                 Conv(x, c3, 3, 1, None, 1, 1),
                 Conv(c3, c3, 3, 1, None, c3, 1),
+                Conv(c3, c3, 1, 1, None, 1, 1),
                 nn.Conv2d(c3, self.nc, 1)
             ) for x in ch
         )
