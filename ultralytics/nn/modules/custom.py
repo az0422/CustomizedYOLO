@@ -217,7 +217,7 @@ class PoolResidualBlocks(nn.Module):
 class DWResidualBlock(nn.Module):
     def __init__(self, c1, c2, dwratio=1):
         super().__init__()
-        self.conv1 = Conv(c1, c2, 3, 1, None, c3 // dwratio, 1)
+        self.conv1 = Conv(c1, c2, 3, 1, None, c1 // dwratio, 1)
         self.conv2 = Conv(c2, c2, 1, 1, None, 1, 1)
     
     def forward(self, x):
@@ -236,9 +236,9 @@ class DWResidualBlock2(nn.Module):
     def __init__(self, c1, c2, dwratio=1):
         super().__init__()
         
-        self.conv1 = Conv(c1, c2, 3, 1, None, c3 // dwratio, 1)
+        self.conv1 = Conv(c1, c2, 3, 1, None, c1 // dwratio, 1)
         self.conv2 = Conv(c2, c2, 1, 1, None, 1, 1)
-        self.conv3 = Conv(c2, c2, 3, 1, None, c3 // dwratio, 1)
+        self.conv3 = Conv(c2, c2, 3, 1, None, c2 // dwratio, 1)
         self.conv4 = Conv(c2, c2, 1, 1, None, 1, 1)
     
     def forward(self, x):
