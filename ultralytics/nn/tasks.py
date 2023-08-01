@@ -7,10 +7,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-from ultralytics.nn.modules import (AIFI, C1, C2, C3, C3TR, SPP, SPPF, Bottleneck, BottleneckCSP, C2f, C3Ghost, C3x,
-                                    Classify, Concat, Conv, Conv2, ConvTranspose, Detect, DWConv, DWConvTranspose2d,
-                                    Focus, GhostBottleneck, GhostConv, HGBlock, HGStem, Pose, RepC3, RepConv,
-                                    RTDETRDecoder, Segment)
+from ultralytics.nn.modules import *
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
 from ultralytics.utils.loss import v8ClassificationLoss, v8DetectionLoss, v8PoseLoss, v8SegmentationLoss
@@ -704,6 +701,37 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
         elif m is RTDETRDecoder:  # special case, channels arg must be passed in index 1
             args.insert(1, [ch[x] for x in f])
+        
+        elif m in (Shortcut, Bagging):
+            c2 = ch[f[0]]
+
+        elif m in (Groups, GroupsF):
+            c2 = ch[f] // args[0]
+
+        elif m is InceptionBlock:
+            c2 = make_divisible(args[0] * width, 8)
+            c1 = ch[f]
+            args = [c1, c2]
+        
+        elif m is SEBlock:
+            c2 = make_divisible(c1 * width, 8)
+            args = [c2, *args]
+            
+        elif m in (EfficientBlock, SPPCSP, SPPFCSP, SPPFCSPF, ResidualBlocks, ResidualBlock,
+                   PoolResidualBlock, PoolResidualBlocks, MobileBlock, SEResidualBlock,
+                   SEResidualBlocks, ResidualBlocks2, SEResidualBlocks2, XceptionBlock,
+                   CSPResidualBlocks, CSPInceptionBlock, CSPXceptionBlock, CSPMobileBlock,
+                   CSPEfficientBlock, MobileBlockv2, DWResidualBlock, DWResidualBlocks,
+                   FuseResidualBlock, FuseResidualBlocks, FuseResidualBlocks2,
+                   DWResidualBlock2, DWResidualBlocks2l):
+            c1, c2 = ch[f], make_divisible(min(args[0], max_channels) * width, 8)
+            args = [c1, c2, *args[1:]]
+            
+            if m in (ResidualBlocks, PoolResidualBlocks, SEResidualBlocks, ResidualBlocks2,
+                     SEResidualBlocks2, CSPResidualBlocks, DWResidualBlocks, FuseResidualBlocks,
+                     FuseResidualBlocks2, DWResidualBlocks2l):
+                args.insert(2, n)
+                n = 1
         else:
             c2 = ch[f]
 
