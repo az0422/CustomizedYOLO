@@ -20,25 +20,10 @@ from .conv import (CBAM, ChannelAttention, Concat, Conv, Conv2, ConvTranspose, D
 from .head import Classify, Detect, Pose, RTDETRDecoder, Segment
 from .transformer import (AIFI, MLP, DeformableTransformerDecoder, DeformableTransformerDecoderLayer, LayerNorm2d,
                           MLPBlock, MSDeformAttn, TransformerBlock, TransformerEncoderLayer, TransformerLayer)
-from .custom import (Groups, GroupsF, Shortcut, ResidualBlock, ResidualBlocks, SEBlock, EfficientBlock, PoolResidualBlock,
-                     PoolResidualBlocks, InceptionBlock, SPPCSP, SPPFCSP, SPPFCSPF, DetectCustomv1, BottleneckCSP2,
-                     Bagging, MobileBlock, SEResidualBlock, SEResidualBlocks, ResidualBlocks2, SEResidualBlocks2,
-                     XceptionBlock, CSPResidualBlocks, CSPInceptionBlock, CSPXceptionBlock, CSPMobileBlock,
-                     CSPEfficientBlock, MobileBlockv2, DWResidualBlock, DWResidualBlocks, FuseResidualBlock,
-                     FuseResidualBlocks, FuseResidualBlocks2, DetectCustomv2, DetectCustomv2Lite,
-                     DWResidualBlock2, DWResidualBlocks2l)
 
-__all__ = ['Conv', 'Conv2', 'LightConv', 'RepConv', 'DWConv', 'DWConvTranspose2d', 'ConvTranspose', 'Focus',
+__all__ = ('Conv', 'Conv2', 'LightConv', 'RepConv', 'DWConv', 'DWConvTranspose2d', 'ConvTranspose', 'Focus',
            'GhostConv', 'ChannelAttention', 'SpatialAttention', 'CBAM', 'Concat', 'TransformerLayer',
            'TransformerBlock', 'MLPBlock', 'LayerNorm2d', 'DFL', 'HGBlock', 'HGStem', 'SPP', 'SPPF', 'C1', 'C2', 'C3',
            'C2f', 'C3x', 'C3TR', 'C3Ghost', 'GhostBottleneck', 'Bottleneck', 'BottleneckCSP', 'Proto', 'Detect',
            'Segment', 'Pose', 'Classify', 'TransformerEncoderLayer', 'RepC3', 'RTDETRDecoder', 'AIFI',
-           'DeformableTransformerDecoder', 'DeformableTransformerDecoderLayer', 'MSDeformAttn', 'MLP']
-
-__all__ += ['Groups', 'GroupsF', 'Shortcut', 'ResidualBlock', 'ResidualBlocks', 'SEBlock', 'EfficientBlock', 'PoolResidualBlock',
-            'PoolResidualBlocks', 'InceptionBlock', 'SPPCSP', 'SPPFCSP', 'SPPFCSPF', 'DetectCustomv1', 'BottleneckCSP2',
-            'Bagging', "MobileBlock", "SEResidualBlock", "SEResidualBlocks", "ResidualBlocks2", "SEResidualBlocks2",
-            "XceptionBlock", "CSPResidualBlocks", "CSPInceptionBlock", "CSPXceptionBlock", "CSPMobileBlock",
-            "CSPEfficientBlock", "MobileBlockv2", "DWResidualBlock", "DWResidualBlocks", "FuseResidualBlock",
-            "FuseResidualBlocks", "FuseResidualBlocks2", "DetectCustomv2", "DetectCustomv2Lite",
-            "DWResidualBlock2", "DWResidualBlocks2l"]
+           'DeformableTransformerDecoder', 'DeformableTransformerDecoderLayer', 'MSDeformAttn', 'MLP')
