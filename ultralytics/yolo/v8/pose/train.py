@@ -2,14 +2,14 @@
 
 from copy import copy
 
+from ultralytics.models import yolo
 from ultralytics.nn.tasks import PoseModel
-from ultralytics.yolo import v8
-from ultralytics.yolo.utils import DEFAULT_CFG
-from ultralytics.yolo.utils.plotting import plot_images, plot_results
+from ultralytics.utils import DEFAULT_CFG, LOGGER
+from ultralytics.utils.plotting import plot_images, plot_results
 
 
 # BaseTrainer python usage
-class PoseTrainer(v8.detect.DetectionTrainer):
+class PoseTrainer(yolo.detect.DetectionTrainer):
 
     def __init__(self, cfg=DEFAULT_CFG, overrides=None, _callbacks=None):
         """Initialize a PoseTrainer object with specified configurations and overrides."""
@@ -17,6 +17,10 @@ class PoseTrainer(v8.detect.DetectionTrainer):
             overrides = {}
         overrides['task'] = 'pose'
         super().__init__(cfg, overrides, _callbacks)
+
+        if isinstance(self.args.device, str) and self.args.device.lower() == 'mps':
+            LOGGER.warning("WARNING ⚠️ Apple MPS known Pose bug. Recommend 'device=cpu' for Pose models. "
+                           'See https://github.com/ultralytics/ultralytics/issues/4031.')
 
     def get_model(self, cfg=None, weights=None, verbose=True):
         """Get pose estimation model with specified configuration and weights."""
@@ -34,7 +38,7 @@ class PoseTrainer(v8.detect.DetectionTrainer):
     def get_validator(self):
         """Returns an instance of the PoseValidator class for validation."""
         self.loss_names = 'box_loss', 'pose_loss', 'kobj_loss', 'cls_loss', 'dfl_loss'
-        return v8.pose.PoseValidator(self.test_loader, save_dir=self.save_dir, args=copy(self.args))
+        return yolo.pose.PoseValidator(self.test_loader, save_dir=self.save_dir, args=copy(self.args))
 
     def plot_training_samples(self, batch, ni):
         """Plot a batch of training samples with annotated class labels, bounding boxes, and keypoints."""

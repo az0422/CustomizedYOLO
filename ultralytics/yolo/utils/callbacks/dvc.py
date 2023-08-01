@@ -3,8 +3,8 @@ import os
 
 import pkg_resources as pkg
 
-from ultralytics.yolo.utils import LOGGER, TESTS_RUNNING
-from ultralytics.yolo.utils.torch_utils import model_info_for_loggers
+from ultralytics.utils import LOGGER, SETTINGS, TESTS_RUNNING
+from ultralytics.utils.torch_utils import model_info_for_loggers
 
 try:
     from importlib.metadata import version
@@ -12,6 +12,7 @@ try:
     import dvclive
 
     assert not TESTS_RUNNING  # do not log pytest
+    assert SETTINGS['dvc'] is True  # verify integration is enabled
 
     ver = version('dvclive')
     if pkg.parse_version(ver) < pkg.parse_version('2.11.0'):
@@ -67,7 +68,7 @@ def on_pretrain_routine_start(trainer):
     try:
         global live
         if not _logger_disabled():
-            live = dvclive.Live(save_dvc_exp=True)
+            live = dvclive.Live(save_dvc_exp=True, cache_images=True)
             LOGGER.info(
                 'DVCLive is detected and auto logging is enabled (can be disabled with `ULTRALYTICS_DVC_DISABLED=true`).'
             )
@@ -117,8 +118,8 @@ def on_train_end(trainer):
         for metric, value in all_metrics.items():
             live.log_metric(metric, value, plot=False)
 
-        _log_plots(trainer.plots, 'eval')
-        _log_plots(trainer.validator.plots, 'eval')
+        _log_plots(trainer.plots, 'val')
+        _log_plots(trainer.validator.plots, 'val')
         _log_confusion_matrix(trainer.validator)
 
         if trainer.best.exists():

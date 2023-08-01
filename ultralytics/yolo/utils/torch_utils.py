@@ -1,5 +1,4 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
-
 import math
 import os
 import platform
@@ -17,8 +16,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 
-from ultralytics.yolo.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, RANK, __version__
-from ultralytics.yolo.utils.checks import check_version
+from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, RANK, __version__
+from ultralytics.utils.checks import check_version
 
 try:
     import thop
@@ -29,7 +28,7 @@ TORCHVISION_0_10 = check_version(torchvision.__version__, '0.10.0')
 TORCH_1_9 = check_version(torch.__version__, '1.9.0')
 TORCH_1_11 = check_version(torch.__version__, '1.11.0')
 TORCH_1_12 = check_version(torch.__version__, '1.12.0')
-TORCH_2_0 = check_version(torch.__version__, minimum='2.0')
+TORCH_2_0 = check_version(torch.__version__, '2.0.0')
 
 
 @contextmanager
@@ -51,6 +50,16 @@ def smart_inference_mode():
         return (torch.inference_mode if TORCH_1_9 else torch.no_grad)()(fn)
 
     return decorate
+
+
+def get_cpu_info():
+    """Return a string with system CPU information, i.e. 'Apple M2'."""
+    import cpuinfo  # pip install py-cpuinfo
+
+    k = 'brand_raw', 'hardware_raw', 'arch_string_raw'  # info keys sorted by preference (not all keys always available)
+    info = cpuinfo.get_cpu_info()  # info dict
+    string = info.get(k[0] if k[0] in info else k[1] if k[1] in info else k[2], 'unknown')
+    return string.replace('(R)', '').replace('CPU ', '').replace('@ ', '')
 
 
 def select_device(device='', batch=0, newline=False, verbose=True):
@@ -93,10 +102,10 @@ def select_device(device='', batch=0, newline=False, verbose=True):
         arg = 'cuda:0'
     elif mps and getattr(torch, 'has_mps', False) and torch.backends.mps.is_available() and TORCH_2_0:
         # Prefer MPS if available
-        s += 'MPS\n'
+        s += f'MPS ({get_cpu_info()})\n'
         arg = 'mps'
     else:  # revert to CPU
-        s += 'CPU\n'
+        s += f'CPU ({get_cpu_info()})\n'
         arg = 'cpu'
 
     if verbose and RANK == -1:
@@ -206,7 +215,7 @@ def model_info_for_loggers(trainer):
          'model/speed_PyTorch(ms)': 18.755}
     """
     if trainer.args.profile:  # profile ONNX and TensorRT times
-        from ultralytics.yolo.utils.benchmarks import ProfileModels
+        from ultralytics.utils.benchmarks import ProfileModels
         results = ProfileModels([trainer.last], device=trainer.device).profile()[0]
         results.pop('model/name')
     else:  # only return PyTorch times from most recent validation
@@ -232,7 +241,7 @@ def get_flops(model, imgsz=640):
 
 
 def get_flops_with_torch_profiler(model, imgsz=640):
-    # Compute model FLOPs (thop alternative)
+    """Compute model FLOPs (thop alternative)."""
     model = de_parallel(model)
     p = next(model.parameters())
     stride = (max(int(model.stride.max()), 32) if hasattr(model, 'stride') else 32) * 2  # max stride
@@ -319,9 +328,9 @@ def init_seeds(seed=0, deterministic=False):
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # for Multi-GPU, exception safe
     # torch.backends.cudnn.benchmark = True  # AutoBatch problem https://github.com/ultralytics/yolov5/issues/9287
-    if deterministic:  # https://github.com/ultralytics/yolov5/pull/8213
+    if deterministic:
         if TORCH_2_0:
-            torch.use_deterministic_algorithms(True)
+            torch.use_deterministic_algorithms(True, warn_only=True)  # warn if deterministic is not possible
             torch.backends.cudnn.deterministic = True
             os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
             os.environ['PYTHONHASHSEED'] = str(seed)
@@ -380,7 +389,7 @@ def strip_optimizer(f: Union[str, Path] = 'best.pt', s: str = '') -> None:
 
     Usage:
         from pathlib import Path
-        from ultralytics.yolo.utils.torch_utils import strip_optimizer
+        from ultralytics.utils.torch_utils import strip_optimizer
         for f in Path('/Users/glennjocher/Downloads/weights').rglob('*.pt'):
             strip_optimizer(f)
     """
@@ -391,6 +400,12 @@ def strip_optimizer(f: Union[str, Path] = 'best.pt', s: str = '') -> None:
         import pickle
 
     x = torch.load(f, map_location=torch.device('cpu'))
+    if 'model' not in x:
+        LOGGER.info(f'Skipping {f}, not a valid Ultralytics model.')
+        return
+
+    if hasattr(x['model'], 'args'):
+        x['model'].args = dict(x['model'].args)  # convert from IterableSimpleNamespace to dict
     args = {**DEFAULT_CFG_DICT, **x['train_args']} if 'train_args' in x else None  # combine args
     if x.get('ema'):
         x['model'] = x['ema']  # replace model with ema

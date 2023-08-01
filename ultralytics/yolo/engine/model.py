@@ -1,37 +1,24 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
+import inspect
 import sys
 from pathlib import Path
 from typing import Union
 
-from ultralytics import yolo  # noqa
-from ultralytics.nn.tasks import (ClassificationModel, DetectionModel, PoseModel, SegmentationModel,
-                                  attempt_load_one_weight, guess_model_task, nn, yaml_model_load)
-from ultralytics.yolo.cfg import get_cfg
-from ultralytics.yolo.engine.exporter import Exporter
-from ultralytics.yolo.utils import (DEFAULT_CFG, DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, NUM_THREADS, RANK, ROOT,
-                                    callbacks, is_git_dir, yaml_load)
-from ultralytics.yolo.utils.checks import check_file, check_imgsz, check_pip_update_available, check_yaml
-from ultralytics.yolo.utils.downloads import GITHUB_ASSET_STEMS
-from ultralytics.yolo.utils.torch_utils import smart_inference_mode
-
-# Map head to model, trainer, validator, and predictor classes
-TASK_MAP = {
-    'classify': [
-        ClassificationModel, yolo.v8.classify.ClassificationTrainer, yolo.v8.classify.ClassificationValidator,
-        yolo.v8.classify.ClassificationPredictor],
-    'detect': [
-        DetectionModel, yolo.v8.detect.DetectionTrainer, yolo.v8.detect.DetectionValidator,
-        yolo.v8.detect.DetectionPredictor],
-    'segment': [
-        SegmentationModel, yolo.v8.segment.SegmentationTrainer, yolo.v8.segment.SegmentationValidator,
-        yolo.v8.segment.SegmentationPredictor],
-    'pose': [PoseModel, yolo.v8.pose.PoseTrainer, yolo.v8.pose.PoseValidator, yolo.v8.pose.PosePredictor]}
+from ultralytics.cfg import get_cfg
+from ultralytics.engine.exporter import Exporter
+from ultralytics.hub.utils import HUB_WEB_ROOT
+from ultralytics.nn.tasks import attempt_load_one_weight, guess_model_task, nn, yaml_model_load
+from ultralytics.utils import (DEFAULT_CFG, DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, RANK, ROOT, callbacks,
+                               is_git_dir, yaml_load)
+from ultralytics.utils.checks import check_file, check_imgsz, check_pip_update_available, check_yaml
+from ultralytics.utils.downloads import GITHUB_ASSET_STEMS
+from ultralytics.utils.torch_utils import smart_inference_mode
 
 
-class YOLO:
+class Model:
     """
-    YOLO (You Only Look Once) object detection model.
+    A base model class to unify apis for all the models.
 
     Args:
         model (str, Path): Path to the model file to load or create.
@@ -63,11 +50,11 @@ class YOLO:
             Logs the model info.
         fuse() -> None:
             Fuses the model for faster inference.
-        predict(source=None, stream=False, **kwargs) -> List[ultralytics.yolo.engine.results.Results]:
+        predict(source=None, stream=False, **kwargs) -> List[ultralytics.engine.results.Results]:
             Performs prediction using the YOLO model.
 
     Returns:
-        list(ultralytics.yolo.engine.results.Results): The prediction results.
+        list(ultralytics.engine.results.Results): The prediction results.
     """
 
     def __init__(self, model: Union[str, Path] = 'yolov8n.pt', task=None) -> None:
@@ -82,13 +69,13 @@ class YOLO:
         self.predictor = None  # reuse predictor
         self.model = None  # model object
         self.trainer = None  # trainer object
-        self.task = None  # task type
         self.ckpt = None  # if loaded from *.pt
         self.cfg = None  # if loaded from *.yaml
         self.ckpt_path = None
         self.overrides = {}  # overrides for trainer object
         self.metrics = None  # validation/training metrics
         self.session = None  # HUB session
+        self.task = task  # task type
         model = str(model).strip()  # strip spaces
 
         # Check if Ultralytics HUB model from https://hub.ultralytics.com
@@ -110,32 +97,29 @@ class YOLO:
         """Calls the 'predict' function with given arguments to perform object detection."""
         return self.predict(source, stream, **kwargs)
 
-    def __getattr__(self, attr):
-        """Raises error if object has no requested attribute."""
-        name = self.__class__.__name__
-        raise AttributeError(f"'{name}' object has no attribute '{attr}'. See valid attributes below.\n{self.__doc__}")
-
     @staticmethod
     def is_hub_model(model):
         """Check if the provided model is a HUB model."""
         return any((
-            model.startswith('https://hub.ultralytics.com/models/'),  # i.e. https://hub.ultralytics.com/models/MODEL_ID
+            model.startswith(f'{HUB_WEB_ROOT}/models/'),  # i.e. https://hub.ultralytics.com/models/MODEL_ID
             [len(x) for x in model.split('_')] == [42, 20],  # APIKEY_MODELID
             len(model) == 20 and not Path(model).exists() and all(x not in model for x in './\\')))  # MODELID
 
-    def _new(self, cfg: str, task=None, verbose=True):
+    def _new(self, cfg: str, task=None, model=None, verbose=True):
         """
         Initializes a new model and infers the task type from the model definitions.
 
         Args:
             cfg (str): model configuration file
             task (str | None): model task
+            model (BaseModel): Customized model.
             verbose (bool): display model info on load
         """
         cfg_dict = yaml_model_load(cfg)
         self.cfg = cfg
         self.task = task or guess_model_task(cfg_dict)
-        self.model = TASK_MAP[self.task][0](cfg_dict, verbose=verbose and RANK == -1)  # build model
+        model = model or self.smart_load('model')
+        self.model = model(cfg_dict, verbose=verbose and RANK == -1)  # build model
         self.overrides['model'] = self.cfg
 
         # Below added to allow export from yamls
@@ -218,7 +202,7 @@ class YOLO:
         self.model.fuse()
 
     @smart_inference_mode()
-    def predict(self, source=None, stream=False, **kwargs):
+    def predict(self, source=None, stream=False, predictor=None, **kwargs):
         """
         Perform prediction using the YOLO model.
 
@@ -226,17 +210,20 @@ class YOLO:
             source (str | int | PIL | np.ndarray): The source of the image to make predictions on.
                           Accepts all source types accepted by the YOLO model.
             stream (bool): Whether to stream the predictions or not. Defaults to False.
+            predictor (BasePredictor): Customized predictor.
             **kwargs : Additional keyword arguments passed to the predictor.
                        Check the 'configuration' section in the documentation for all available options.
 
         Returns:
-            (List[ultralytics.yolo.engine.results.Results]): The prediction results.
+            (List[ultralytics.engine.results.Results]): The prediction results.
         """
         if source is None:
             source = ROOT / 'assets' if is_git_dir() else 'https://ultralytics.com/images/bus.jpg'
             LOGGER.warning(f"WARNING ⚠️ 'source' is missing. Using 'source={source}'.")
         is_cli = (sys.argv[0].endswith('yolo') or sys.argv[0].endswith('ultralytics')) and any(
             x in sys.argv for x in ('predict', 'track', 'mode=predict', 'mode=track'))
+        # Check prompts for SAM/FastSAM
+        prompts = kwargs.pop('prompts', None)
         overrides = self.overrides.copy()
         overrides['conf'] = 0.25
         overrides.update(kwargs)  # prefer kwargs
@@ -246,12 +233,16 @@ class YOLO:
             overrides['save'] = kwargs.get('save', False)  # do not save by default if called in Python
         if not self.predictor:
             self.task = overrides.get('task') or self.task
-            self.predictor = TASK_MAP[self.task][3](overrides=overrides, _callbacks=self.callbacks)
+            predictor = predictor or self.smart_load('predictor')
+            self.predictor = predictor(overrides=overrides, _callbacks=self.callbacks)
             self.predictor.setup_model(model=self.model, verbose=is_cli)
         else:  # only update args if predictor is already setup
             self.predictor.args = get_cfg(self.predictor.args, overrides)
             if 'project' in overrides or 'name' in overrides:
                 self.predictor.save_dir = self.predictor.get_save_dir()
+        # Set prompts for SAM/FastSAM
+        if len and hasattr(self.predictor, 'set_prompts'):
+            self.predictor.set_prompts(prompts)
         return self.predictor.predict_cli(source=source) if is_cli else self.predictor(source=source, stream=stream)
 
     def track(self, source=None, stream=False, persist=False, **kwargs):
@@ -265,11 +256,11 @@ class YOLO:
             **kwargs (optional): Additional keyword arguments for the tracking process.
 
         Returns:
-            (List[ultralytics.yolo.engine.results.Results]): The tracking results.
+            (List[ultralytics.engine.results.Results]): The tracking results.
 
         """
         if not hasattr(self.predictor, 'trackers'):
-            from ultralytics.tracker import register_tracker
+            from ultralytics.trackers import register_tracker
             register_tracker(self, persist)
         # ByteTrack-based method needs low confidence predictions as input
         conf = kwargs.get('conf') or 0.1
@@ -278,12 +269,13 @@ class YOLO:
         return self.predict(source=source, stream=stream, **kwargs)
 
     @smart_inference_mode()
-    def val(self, data=None, **kwargs):
+    def val(self, data=None, validator=None, **kwargs):
         """
         Validate a model on a given dataset.
 
         Args:
             data (str): The dataset to validate on. Accepts all formats accepted by yolo
+            validator (BaseValidator): Customized validator.
             **kwargs : Any other args accepted by the validators. To see all args check 'configuration' section in docs
         """
         overrides = self.overrides.copy()
@@ -296,11 +288,12 @@ class YOLO:
             self.task = args.task
         else:
             args.task = self.task
+        validator = validator or self.smart_load('validator')
         if args.imgsz == DEFAULT_CFG.imgsz and not isinstance(self.model, (str, Path)):
             args.imgsz = self.model.args['imgsz']  # use trained imgsz unless custom value is passed
         args.imgsz = check_imgsz(args.imgsz, max_dim=1)
 
-        validator = TASK_MAP[self.task][2](args=args, _callbacks=self.callbacks)
+        validator = validator(args=args, _callbacks=self.callbacks)
         validator(model=self.model)
         self.metrics = validator.metrics
 
@@ -315,12 +308,19 @@ class YOLO:
             **kwargs : Any other args accepted by the validators. To see all args check 'configuration' section in docs
         """
         self._check_is_pytorch_model()
-        from ultralytics.yolo.utils.benchmarks import benchmark
+        from ultralytics.utils.benchmarks import benchmark
         overrides = self.model.args.copy()
         overrides.update(kwargs)
         overrides['mode'] = 'benchmark'
         overrides = {**DEFAULT_CFG_DICT, **overrides}  # fill in missing overrides keys with defaults
-        return benchmark(model=self, imgsz=overrides['imgsz'], half=overrides['half'], device=overrides['device'])
+        return benchmark(
+            model=self,
+            data=kwargs.get('data'),  # if no 'data' argument passed set data=None for default datasets
+            imgsz=overrides['imgsz'],
+            half=overrides['half'],
+            int8=overrides['int8'],
+            device=overrides['device'],
+            verbose=overrides['verbose'])
 
     def export(self, **kwargs):
         """
@@ -337,15 +337,18 @@ class YOLO:
             overrides['imgsz'] = self.model.args['imgsz']  # use trained imgsz unless custom value is passed
         if 'batch' not in kwargs:
             overrides['batch'] = 1  # default to 1 if not modified
+        if 'data' not in kwargs:
+            overrides['data'] = None  # default to None if not modified (avoid int8 calibration with coco.yaml)
         args = get_cfg(cfg=DEFAULT_CFG, overrides=overrides)
         args.task = self.task
         return Exporter(overrides=args, _callbacks=self.callbacks)(model=self.model)
 
-    def train(self, **kwargs):
+    def train(self, trainer=None, **kwargs):
         """
         Trains the model on a given dataset.
 
         Args:
+            trainer (BaseTrainer, optional): Customized trainer.
             **kwargs (Any): Any number of arguments representing the training configuration.
         """
         self._check_is_pytorch_model()
@@ -365,7 +368,8 @@ class YOLO:
         if overrides.get('resume'):
             overrides['resume'] = self.ckpt_path
         self.task = overrides.get('task') or self.task
-        self.trainer = TASK_MAP[self.task][1](overrides=overrides, _callbacks=self.callbacks)
+        trainer = trainer or self.smart_load('trainer')
+        self.trainer = trainer(overrides=overrides, _callbacks=self.callbacks)
         if not overrides.get('resume'):  # manually set model only if not resuming
             self.trainer.model = self.trainer.get_model(weights=self.model if self.ckpt else None, cfg=self.model.yaml)
             self.model = self.trainer.model
@@ -387,23 +391,9 @@ class YOLO:
         self._check_is_pytorch_model()
         self.model.to(device)
 
-    def tune(self,
-             data: str,
-             space: dict = None,
-             grace_period: int = 10,
-             gpu_per_trial: int = None,
-             max_samples: int = 10,
-             train_args: dict = None):
+    def tune(self, *args, **kwargs):
         """
-        Runs hyperparameter tuning using Ray Tune.
-
-        Args:
-            data (str): The dataset to run the tuner on.
-            space (dict, optional): The hyperparameter search space. Defaults to None.
-            grace_period (int, optional): The grace period in epochs of the ASHA scheduler. Defaults to 10.
-            gpu_per_trial (int, optional): The number of GPUs to allocate per trial. Defaults to None.
-            max_samples (int, optional): The maximum number of trials to run. Defaults to 10.
-            train_args (dict, optional): Additional arguments to pass to the `train()` method. Defaults to {}.
+        Runs hyperparameter tuning using Ray Tune. See ultralytics.utils.tuner.run_ray_tune for Args.
 
         Returns:
             (dict): A dictionary containing the results of the hyperparameter search.
@@ -411,66 +401,9 @@ class YOLO:
         Raises:
             ModuleNotFoundError: If Ray Tune is not installed.
         """
-        if train_args is None:
-            train_args = {}
-
-        try:
-            from ultralytics.yolo.utils.tuner import (ASHAScheduler, RunConfig, WandbLoggerCallback, default_space,
-                                                      task_metric_map, tune)
-        except ImportError:
-            raise ModuleNotFoundError("Install Ray Tune: `pip install 'ray[tune]'`")
-
-        try:
-            import wandb
-            from wandb import __version__  # noqa
-        except ImportError:
-            wandb = False
-
-        def _tune(config):
-            """
-            Trains the YOLO model with the specified hyperparameters and additional arguments.
-
-            Args:
-                config (dict): A dictionary of hyperparameters to use for training.
-
-            Returns:
-                None.
-            """
-            self._reset_callbacks()
-            config.update(train_args)
-            self.train(**config)
-
-        if not space:
-            LOGGER.warning('WARNING: search space not provided. Using default search space')
-            space = default_space
-
-        space['data'] = data
-
-        # Define the trainable function with allocated resources
-        trainable_with_resources = tune.with_resources(_tune, {'cpu': NUM_THREADS, 'gpu': gpu_per_trial or 0})
-
-        # Define the ASHA scheduler for hyperparameter search
-        asha_scheduler = ASHAScheduler(time_attr='epoch',
-                                       metric=task_metric_map[self.task],
-                                       mode='max',
-                                       max_t=train_args.get('epochs') or 100,
-                                       grace_period=grace_period,
-                                       reduction_factor=3)
-
-        # Define the callbacks for the hyperparameter search
-        tuner_callbacks = [WandbLoggerCallback(project='YOLOv8-tune')] if wandb else []
-
-        # Create the Ray Tune hyperparameter search tuner
-        tuner = tune.Tuner(trainable_with_resources,
-                           param_space=space,
-                           tune_config=tune.TuneConfig(scheduler=asha_scheduler, num_samples=max_samples),
-                           run_config=RunConfig(callbacks=tuner_callbacks, local_dir='./runs'))
-
-        # Run the hyperparameter search
-        tuner.fit()
-
-        # Return the results of the hyperparameter search
-        return tuner.get_results()
+        self._check_is_pytorch_model()
+        from ultralytics.utils.tuner import run_ray_tune
+        return run_ray_tune(self, *args, **kwargs)
 
     @property
     def names(self):
@@ -505,3 +438,28 @@ class YOLO:
         """Reset all registered callbacks."""
         for event in callbacks.default_callbacks.keys():
             self.callbacks[event] = [callbacks.default_callbacks[event][0]]
+
+    def __getattr__(self, attr):
+        """Raises error if object has no requested attribute."""
+        name = self.__class__.__name__
+        raise AttributeError(f"'{name}' object has no attribute '{attr}'. See valid attributes below.\n{self.__doc__}")
+
+    def smart_load(self, key):
+        """Load model/trainer/validator/predictor."""
+        try:
+            return self.task_map[self.task][key]
+        except Exception:
+            name = self.__class__.__name__
+            mode = inspect.stack()[1][3]  # get the function name.
+            raise NotImplementedError(
+                f'WARNING ⚠️ `{name}` model does not support `{mode}` mode for `{self.task}` task yet.')
+
+    @property
+    def task_map(self):
+        """
+        Map head to model, trainer, validator, and predictor classes.
+
+        Returns:
+            task_map (dict): The map of model task to mode classes.
+        """
+        raise NotImplementedError('Please provide task map for your model!')

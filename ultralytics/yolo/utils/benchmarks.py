@@ -3,9 +3,9 @@
 Benchmark a YOLO model formats for speed and accuracy
 
 Usage:
-    from ultralytics.yolo.utils.benchmarks import ProfileModels, benchmark
+    from ultralytics.utils.benchmarks import ProfileModels, benchmark
     ProfileModels(['yolov8n.yaml', 'yolov8s.yaml']).profile()
-    run_benchmarks(model='yolov8n.pt', imgsz=160)
+    benchmark(model='yolov8n.pt', imgsz=160)
 
 Format                  | `format=argument`         | Model
 ---                     | ---                       | ---
@@ -21,10 +21,12 @@ TensorFlow Lite         | `tflite`                  | yolov8n.tflite
 TensorFlow Edge TPU     | `edgetpu`                 | yolov8n_edgetpu.tflite
 TensorFlow.js           | `tfjs`                    | yolov8n_web_model/
 PaddlePaddle            | `paddle`                  | yolov8n_paddle_model/
+ncnn                    | `ncnn`                    | yolov8n_ncnn_model/
 """
 
 import glob
 import platform
+import sys
 import time
 from pathlib import Path
 
@@ -33,31 +35,34 @@ import torch.cuda
 from tqdm import tqdm
 
 from ultralytics import YOLO
-from ultralytics.yolo.engine.exporter import export_formats
-from ultralytics.yolo.utils import LINUX, LOGGER, MACOS, ROOT, SETTINGS
-from ultralytics.yolo.utils.checks import check_requirements, check_yolo
-from ultralytics.yolo.utils.downloads import download
-from ultralytics.yolo.utils.files import file_size
-from ultralytics.yolo.utils.torch_utils import select_device
+from ultralytics.cfg import TASK2DATA, TASK2METRIC
+from ultralytics.engine.exporter import export_formats
+from ultralytics.utils import LINUX, LOGGER, MACOS, ROOT, SETTINGS
+from ultralytics.utils.checks import check_requirements, check_yolo
+from ultralytics.utils.downloads import download
+from ultralytics.utils.files import file_size
+from ultralytics.utils.torch_utils import select_device
 
 
 def benchmark(model=Path(SETTINGS['weights_dir']) / 'yolov8n.pt',
+              data=None,
               imgsz=160,
               half=False,
               int8=False,
               device='cpu',
-              hard_fail=False):
+              verbose=False):
     """
     Benchmark a YOLO model across different formats for speed and accuracy.
 
     Args:
         model (str | Path | optional): Path to the model file or directory. Default is
             Path(SETTINGS['weights_dir']) / 'yolov8n.pt'.
+        data (str, optional): Dataset to evaluate on, inherited from TASK2DATA if not passed. Default is None.
         imgsz (int, optional): Image size for the benchmark. Default is 160.
         half (bool, optional): Use half-precision for the model if True. Default is False.
         int8 (bool, optional): Use int8-precision for the model if True. Default is False.
         device (str, optional): Device to run the benchmark on, either 'cpu' or 'cuda'. Default is 'cpu'.
-        hard_fail (bool | float | optional): If True or a float, assert benchmarks pass with given metric.
+        verbose (bool | float | optional): If True or a float, assert benchmarks pass with given metric.
             Default is False.
 
     Returns:
@@ -80,6 +85,8 @@ def benchmark(model=Path(SETTINGS['weights_dir']) / 'yolov8n.pt',
             assert i != 9 or LINUX, 'Edge TPU export only supported on Linux'
             if i == 10:
                 assert MACOS or LINUX, 'TF.js export only supported on macOS and Linux'
+            elif i == 11:
+                assert sys.version_info < (3, 11), 'PaddlePaddle export only supported on Python<=3.10'
             if 'cpu' in device.type:
                 assert cpu, 'inference not supported on CPU'
             if 'cuda' in device.type:
@@ -96,6 +103,7 @@ def benchmark(model=Path(SETTINGS['weights_dir']) / 'yolov8n.pt',
             emoji = '❎'  # indicates export succeeded
 
             # Predict
+            assert model.task != 'pose' or i != 7, 'GraphDef Pose inference is not supported'
             assert i not in (9, 10), 'inference not supported'  # Edge TPU and TF.js are unsupported
             assert i != 5 or platform.system() == 'Darwin', 'inference only supported on macOS>=10.13'  # CoreML
             if not (ROOT / 'assets/bus.jpg').exists():
@@ -103,15 +111,8 @@ def benchmark(model=Path(SETTINGS['weights_dir']) / 'yolov8n.pt',
             export.predict(ROOT / 'assets/bus.jpg', imgsz=imgsz, device=device, half=half)
 
             # Validate
-            if model.task == 'detect':
-                data, key = 'coco8.yaml', 'metrics/mAP50-95(B)'
-            elif model.task == 'segment':
-                data, key = 'coco8-seg.yaml', 'metrics/mAP50-95(M)'
-            elif model.task == 'classify':
-                data, key = 'imagenet100', 'metrics/accuracy_top5'
-            elif model.task == 'pose':
-                data, key = 'coco8-pose.yaml', 'metrics/mAP50-95(P)'
-
+            data = data or TASK2DATA[model.task]  # task to dataset, i.e. coco8.yaml for task=detect
+            key = TASK2METRIC[model.task]  # task to metric, i.e. metrics/mAP50-95(B) for task=detect
             results = export.val(data=data,
                                  batch=1,
                                  imgsz=imgsz,
@@ -123,8 +124,8 @@ def benchmark(model=Path(SETTINGS['weights_dir']) / 'yolov8n.pt',
             metric, speed = results.results_dict[key], results.speed['inference']
             y.append([name, '✅', round(file_size(filename), 1), round(metric, 4), round(speed, 2)])
         except Exception as e:
-            if hard_fail:
-                assert type(e) is AssertionError, f'Benchmark hard_fail for {name}: {e}'
+            if verbose:
+                assert type(e) is AssertionError, f'Benchmark failure for {name}: {e}'
             LOGGER.warning(f'ERROR ❌️ Benchmark failure for {name}: {e}')
             y.append([name, emoji, round(file_size(filename), 1), None, None])  # mAP, t_inference
 
@@ -138,10 +139,10 @@ def benchmark(model=Path(SETTINGS['weights_dir']) / 'yolov8n.pt',
     with open('benchmarks.log', 'a', errors='ignore', encoding='utf-8') as f:
         f.write(s)
 
-    if hard_fail and isinstance(hard_fail, float):
+    if verbose and isinstance(verbose, float):
         metrics = df[key].array  # values to compare to floor
-        floor = hard_fail  # minimum metric floor to pass, i.e. = 0.29 mAP for YOLOv5n
-        assert all(x > floor for x in metrics if pd.notna(x)), f'HARD FAIL: one or more metric(s) < floor {floor}'
+        floor = verbose  # minimum metric floor to pass, i.e. = 0.29 mAP for YOLOv5n
+        assert all(x > floor for x in metrics if pd.notna(x)), f'Benchmark failure: metric(s) < floor {floor}'
 
     return df
 

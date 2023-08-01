@@ -4,13 +4,14 @@ import os
 import re
 from pathlib import Path
 
-from ultralytics.yolo.utils import LOGGER, TESTS_RUNNING, colorstr
+from ultralytics.utils import LOGGER, SETTINGS, TESTS_RUNNING, colorstr
 
 try:
     import mlflow
 
     assert not TESTS_RUNNING  # do not log pytest
     assert hasattr(mlflow, '__version__')  # verify package is not directory
+    assert SETTINGS['mlflow'] is True  # verify integration is enabled
 except (ImportError, AssertionError):
     mlflow = None
 
@@ -26,7 +27,8 @@ def on_pretrain_routine_end(trainer):
         mlflow_location = os.environ['MLFLOW_TRACKING_URI']  # "http://192.168.xxx.xxx:5000"
         mlflow.set_tracking_uri(mlflow_location)
 
-        experiment_name = os.environ.get('MLFLOW_EXPERIMENT') or trainer.args.project or '/Shared/YOLOv8'
+        experiment_name = os.environ.get('MLFLOW_EXPERIMENT_NAME') or trainer.args.project or '/Shared/YOLOv8'
+        run_name = os.environ.get('MLFLOW_RUN') or trainer.args.name
         experiment = mlflow.get_experiment_by_name(experiment_name)
         if experiment is None:
             mlflow.create_experiment(experiment_name)
@@ -36,7 +38,7 @@ def on_pretrain_routine_end(trainer):
         try:
             run, active_run = mlflow, mlflow.active_run()
             if not active_run:
-                active_run = mlflow.start_run(experiment_id=experiment.experiment_id)
+                active_run = mlflow.start_run(experiment_id=experiment.experiment_id, run_name=run_name)
             run_id = active_run.info.run_id
             LOGGER.info(f'{prefix}Using run_id({run_id}) at {mlflow_location}')
             run.log_params(vars(trainer.model.args))

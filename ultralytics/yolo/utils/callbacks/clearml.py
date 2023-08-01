@@ -5,8 +5,8 @@ import re
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
-from ultralytics.yolo.utils import LOGGER, TESTS_RUNNING
-from ultralytics.yolo.utils.torch_utils import model_info_for_loggers
+from ultralytics.utils import LOGGER, SETTINGS, TESTS_RUNNING
+from ultralytics.utils.torch_utils import model_info_for_loggers
 
 try:
     import clearml
@@ -16,6 +16,7 @@ try:
 
     assert hasattr(clearml, '__version__')  # verify package is not directory
     assert not TESTS_RUNNING  # do not log pytest
+    assert SETTINGS['clearml'] is True  # verify integration is enabled
 except (ImportError, AssertionError):
     clearml = None
 
