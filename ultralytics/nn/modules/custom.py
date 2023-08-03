@@ -398,9 +398,9 @@ class CSPMobileBlock(nn.Module):
         return self.conv3(torch.cat([x1, y1], axis=1))
 
 class SPPCSP(nn.Module):
-    def __init__(self, c1, c2, e=1.0, k=(5, 9, 13)):
+    def __init__(self, c1, c2, k=(5, 9, 13)):
         super().__init__()
-        c3 = int(c2 * e)
+        c3 = c2 // 2
 
         self.cv1 = Conv(c1, c3, 1, 1)
         self.cv2 = Conv(c1, c3, 1, 1)
@@ -421,9 +421,9 @@ class SPPCSP(nn.Module):
         return self.cv4(torch.cat([x2, y1], 1))
 
 class SPPFCSP(nn.Module):
-    def __init__(self, c1, c2, e=1.0, k=5):
+    def __init__(self, c1, c2, k=5):
         super().__init__()
-        c3 = int(c2 * e)
+        c3 = c2 // 2
 
         self.conv1 = Conv(c1, c3, 1, 1)
         self.conv2 = Conv(c1, c3, 1, 1)
@@ -441,9 +441,9 @@ class SPPFCSP(nn.Module):
         return self.conv4(torch.cat([x1, self.conv3(torch.cat([x2, y1, y2, y3], 1))], 1))
 
 class SPPFCSPF(nn.Module):
-    def __init__(self, c1, c2, e=1.0, k=5):
+    def __init__(self, c1, c2, k=5):
         super().__init__()
-        c3 = int(c2 * e)
+        c3 = c2 // 2
 
         self.conv1 = Conv(c1, c3, 1, 1)
         self.conv2 = Conv(c1, c3, 1, 1)
