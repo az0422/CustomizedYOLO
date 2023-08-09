@@ -250,6 +250,27 @@ class DWResidualBlocks2l(nn.Module):
     
     def forward(self, x):
         return self.m(x)
+
+class ResNextBlock(nn.Module):
+    def __init__(self, c1, c2, expand=1.0, dwratio=1):
+        super().__init__()
+        
+        c3 = int(c1 * expand)
+        
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
+        self.conv2 = Conv(c3, c3, 3, 1, None, c3 // dwratio, 1)
+        self.conv3 = Conv(c3, c2, 1, 1, None, 1, 1)
+        
+    def forward(self, x):
+        return x + self.conv3(self.conv2(self.conv1(x)))
+
+class ResNextBlocks(nn.Module):
+    def __init__(self, c1, c2, n=1, expand=1.0, dwratio=1):
+        super().__init__()
+        self.m = nn.Sequential(*[ResNextBlock(c1, c2, expand, dwratio) for _ in range(n)])
+    
+    def forward(self, x):
+        return self.m(x)
         
 class EfficientBlock(nn.Module):
     def __init__(self, c1, c2, expand=6, ratio=16, stride=1):
