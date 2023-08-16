@@ -1,5 +1,6 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
+import contextlib
 import hashlib
 import json
 import os
@@ -48,14 +49,13 @@ def get_hash(paths):
     return h.hexdigest()  # return hash
 
 
-def exif_size(img: Image.Image):
+def exif_size(img):
     """Returns exif-corrected PIL size."""
     s = img.size  # (width, height)
-    exif = img.getexif()
-    if exif:
-        rotation = exif.get(274, None)  # the key for the orientation tag in the EXIF data is 274 (in decimal)
+    with contextlib.suppress(Exception):
+        rotation = dict(img._getexif().items())[orientation]
         if rotation in [6, 8]:  # rotation 270 or 90
-            s = s[1], s[0]
+            s = (s[1], s[0])
     return s
 
 
@@ -190,21 +190,7 @@ def polygons2masks_overlap(imgsz, segments, downsample_ratio=1):
 
 
 def check_det_dataset(dataset, autodownload=True):
-    """
-    Download, verify, and/or unzip a dataset if not found locally.
-
-    This function checks the availability of a specified dataset, and if not found, it has the option to download and
-    unzip the dataset. It then reads and parses the accompanying YAML data, ensuring key requirements are met and also
-    resolves paths related to the dataset.
-
-    Args:
-        dataset (str): Path to the dataset or dataset descriptor (like a YAML file).
-        autodownload (bool, optional): Whether to automatically download the dataset if not found. Defaults to True.
-
-    Returns:
-        (dict): Parsed dataset information and paths.
-    """
-
+    """Download, check and/or unzip dataset if not found locally."""
     data = check_file(dataset)
 
     # Download (optional)
@@ -341,7 +327,7 @@ def check_cls_dataset(dataset: str, split=''):
     return {'train': train_set, 'val': val_set or test_set, 'test': test_set or val_set, 'nc': nc, 'names': names}
 
 
-class HUBDatasetStats:
+class HUBDatasetStats():
     """
     A class for generating HUB dataset JSON and `-hub` dataset directory.
 
@@ -364,9 +350,8 @@ class HUBDatasetStats:
 
     def __init__(self, path='coco128.yaml', task='detect', autodownload=False):
         """Initialize class."""
-        path = Path(path).resolve()
         LOGGER.info(f'Starting HUB dataset checks for {path}....')
-        zipped, data_dir, yaml_path = self._unzip(path)
+        zipped, data_dir, yaml_path = self._unzip(Path(path))
         try:
             # data = yaml_load(check_yaml(yaml_path))  # data dict
             data = check_det_dataset(yaml_path, autodownload)  # data dict
@@ -386,10 +371,11 @@ class HUBDatasetStats:
     def _find_yaml(dir):
         """Return data.yaml file."""
         files = list(dir.glob('*.yaml')) or list(dir.rglob('*.yaml'))  # try root level first and then recursive
-        assert files, f"No *.yaml file found in '{dir.resolve()}'"
+        assert files, f'No *.yaml file found in {dir}'
         if len(files) > 1:
             files = [f for f in files if f.stem == dir.stem]  # prefer *.yaml files that match dir name
-        assert len(files) == 1, f"Expected 1 *.yaml file in '{dir.resolve()}', but found {len(files)}.\n{files}"
+            assert files, f'Multiple *.yaml files found in {dir}, only 1 *.yaml file allowed'
+        assert len(files) == 1, f'Multiple *.yaml files found: {files}, only 1 *.yaml file allowed in {dir}'
         return files[0]
 
     def _unzip(self, path):
@@ -492,7 +478,6 @@ def compress_one_image(f, f_new=None, max_dim=1920, quality=50):
             compress_one_image(f)
         ```
     """
-
     try:  # use PIL
         im = Image.open(f)
         r = max_dim / max(im.height, im.width)  # ratio
@@ -561,18 +546,18 @@ def zip_directory(dir, use_zipfile_library=True):
         shutil.make_archive(dir, 'zip', dir)
 
 
-def autosplit(path=DATASETS_DIR / 'coco8/images', weights=(0.9, 0.1, 0.0), annotated_only=False):
+def autosplit(path=DATASETS_DIR / 'coco128/images', weights=(0.9, 0.1, 0.0), annotated_only=False):
     """
     Autosplit a dataset into train/val/test splits and save the resulting splits into autosplit_*.txt files.
 
     Args:
-        path (Path, optional): Path to images directory. Defaults to DATASETS_DIR / 'coco8/images'.
+        path (Path, optional): Path to images directory. Defaults to DATASETS_DIR / 'coco128/images'.
         weights (list | tuple, optional): Train, validation, and test split fractions. Defaults to (0.9, 0.1, 0.0).
         annotated_only (bool, optional): If True, only images with an associated txt file are used. Defaults to False.
 
     Example:
         ```python
-        from ultralytics.data.utils import autosplit
+        from ultralytics.utils.dataloaders import autosplit
 
         autosplit()
         ```
