@@ -499,6 +499,53 @@ class HeaderConv(nn.Module):
         y = self.conv3(self.conv2(x1))
         y = self.conv5(self.conv4(y)) + x1
         return self.conv6(y)
+
+class CSPHeaderConv(nn.Module):
+    def __init__(self, c1, c2):
+        super().__init__()
+        c3 = c2 // 2
+        
+        self.conv1 = Conv(c1, c2, 3, 1, None, 1, 1)
+        
+        self.conv2 = Conv(c2, c3, 1, 1, None, 1, 1)
+        self.conv3 = Conv(c2, c3, 1, 1, None, 1, 1)
+        
+        self.conv4 = Conv(c3, c3, 3, 1, None, c3, 1)
+        self.conv5 = Conv(c3, c3, 1, 1, None, 1, 1)
+        self.conv6 = Conv(c3, c3, 3, 1, None, c3, 1)
+        self.conv7 = Conv(c3, c3, 1, 1, None, 1, 1)
+        
+        self.conv8 = Conv(c2, c2, 1, 1, None, 1, 1)
+    
+    def forward(self, x):
+        x1 = self.conv1(x)
+        
+        x2 = self.conv2(x1)
+        x3 = self.conv3(x1)
+        
+        y = self.conv5(self.conv4(x3))
+        y = self.conv7(self.conv6(y)) + x3
+        
+        return self.conv8(torch.concat([y, x2], 1))
+
+class DetectCustomv3(Detect):
+    def __init__(self, nc=80, ch=()):
+        super().__init__(nc, ch)
+        
+        c2, c3 = max((16, ch[0] // 4, self.reg_max * 4)), max(ch[0], self.nc)  # channels
+        self.cv2 = nn.ModuleList(
+            nn.Sequential(
+                CSPHeaderConv(x, c2),
+                nn.Conv2d(c2, 4 * self.reg_max, 1)
+            ) for x in ch
+        )
+
+        self.cv3 = nn.ModuleList(
+            nn.Sequential(
+                CSPHeaderConv(x, c3),
+                nn.Conv2d(c3, self.nc, 1)
+            ) for x in ch
+        )
     
 class DetectCustomv2Lite(Detect):
     def __init__(self, nc=80, ch=()):
