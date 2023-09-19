@@ -16,16 +16,20 @@ on:
         description: 'Run HUB'
         default: false
         type: boolean
-      tests:
-        description: 'Run Tests'
-        default: false
-        type: boolean
       benchmarks:
         description: 'Run Benchmarks'
         default: false
         type: boolean
+      tests:
+        description: 'Run Tests'
+        default: false
+        type: boolean
       gpu:
         description: 'Run GPU'
+        default: false
+        type: boolean
+      conda:
+        description: 'Run Conda'
         default: false
         type: boolean
 
@@ -40,7 +44,7 @@ jobs:
         python-version: ['3.11']
         model: [yolov5n]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
@@ -103,7 +107,7 @@ jobs:
         python-version: ['3.10']
         model: [yolov8n]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
@@ -171,7 +175,7 @@ jobs:
             python-version: '3.8'  # torch 1.8.0 requires python >=3.6, <=3.8
             torch: '1.8.0'  # min torch version CI https://pypi.org/project/torchvision/
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
@@ -213,7 +217,7 @@ jobs:
     timeout-minutes: 60
     runs-on: gpu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install requirements
         run: pip install -e .
       - name: Check environment
@@ -238,7 +242,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   Conda:
-    if: github.repository == 'ultralytics/ultralytics' && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
+    if: github.repository == 'ultralytics/ultralytics' && (github.event_name != 'workflow_dispatch' || github.event.inputs.conda == 'true' || github.event_name == 'schedule')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -258,11 +262,10 @@ jobs:
           activate-environment: anaconda-client-env
       - name: Install Libmamba
         run: |
-          # conda install conda-libmamba-solver
           conda config --set solver libmamba
       - name: Install Ultralytics package from conda-forge
         run: |
-          conda install -c conda-forge ultralytics
+          conda install -c pytorch -c conda-forge pytorch torchvision ultralytics
       - name: Install pip packages
         run: |
           pip install pytest 'coremltools>=7.0.b1' # 'openvino-dev>=2023.0'
