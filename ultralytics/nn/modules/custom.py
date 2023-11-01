@@ -232,21 +232,23 @@ class DWResidualBlocks(nn.Module):
         return self.m(x)
 
 class DWResidualBlock2(nn.Module):
-    def __init__(self, c1, c2, dwratio=1):
+    def __init__(self, c1, c2, dwratio=1, btratio=1):
         super().__init__()
+
+        c3 = c2 // btratio
         
-        self.conv1 = Conv(c1, c2, 3, 1, None, c1 // dwratio, 1)
-        self.conv2 = Conv(c2, c2, 1, 1, None, 1, 1)
-        self.conv3 = Conv(c2, c2, 3, 1, None, c2 // dwratio, 1)
-        self.conv4 = Conv(c2, c2, 1, 1, None, 1, 1)
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
+        self.conv2 = Conv(c3, c3, 3, 1, None, c3 // dwratio, 1)
+        self.conv3 = Conv(c3, c3, 1, 1, None, 1, 1)
+        self.conv4 = Conv(c3, c2, 3, 1, None, c2 // dwratio if btratio == 1 else 1, 1)
     
     def forward(self, x):
         return x + self.conv4(self.conv3(self.conv2(self.conv1(x))))
 
 class DWResidualBlocks2l(nn.Module):
-    def __init__(self, c1, c2, n=1, dwratio=1):
+    def __init__(self, c1, c2, n=1, dwratio=1, btratio=1):
         super().__init__()
-        self.m = nn.Sequential(*[DWResidualBlock2(c1, c2, dwratio) for _ in range(n)])
+        self.m = nn.Sequential(*[DWResidualBlock2(c1, c2, dwratio, btratio) for _ in range(n)])
     
     def forward(self, x):
         return self.m(x)
