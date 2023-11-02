@@ -38,7 +38,7 @@ from .custom import (Groups, GroupsF, Shortcut, ResidualBlock, ResidualBlocks, S
                      XceptionBlock, CSPResidualBlocks, CSPInceptionBlock, CSPXceptionBlock, CSPMobileBlock,
                      CSPEfficientBlock, MobileBlockv2, DWResidualBlock, DWResidualBlocks, FuseResidualBlock,
                      FuseResidualBlocks, FuseResidualBlocks2, DetectCustomv2, DetectCustomv2Lite,
-                     DWResidualBlock2, DWResidualBlocks2l, ResNextBlock, ResNextBlocks, DetectCustomv3)
+                     DWResidualBlock2, DWResidualBlocks2l, ResNextBlock, ResNextBlocks, DetectCustomv3, DetectCustomv4)
 
 __all__ = list(__all__) + [
             'Groups', 'GroupsF', 'Shortcut', 'ResidualBlock', 'ResidualBlocks', 'SEBlock', 'EfficientBlock', 'PoolResidualBlock',
@@ -47,4 +47,4 @@ __all__ = list(__all__) + [
             "XceptionBlock", "CSPResidualBlocks", "CSPInceptionBlock", "CSPXceptionBlock", "CSPMobileBlock",
             "CSPEfficientBlock", "MobileBlockv2", "DWResidualBlock", "DWResidualBlocks", "FuseResidualBlock",
             "FuseResidualBlocks", "FuseResidualBlocks2", "DetectCustomv2", "DetectCustomv2Lite",
-            "DWResidualBlock2", "DWResidualBlocks2l", "ResNextBlock", "ResNextBlocks", "DetectCustomv3"]
+            "DWResidualBlock2", "DWResidualBlocks2l", "ResNextBlock", "ResNextBlocks", "DetectCustomv3", "DetectCustomv4"]
