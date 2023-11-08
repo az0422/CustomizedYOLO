@@ -85,12 +85,26 @@ class ResidualBlocks(nn.Module):
     def forward(self, x):
         return self.m(x)
 
-class ResidualBlocks2(nn.Module):
-    def __init__(self, c1, c2, n=1, e=1.0):
+class ResidualBlock2(nn.Module):
+    def __init__(self, c1, c2, ratio=1):
         super().__init__()
-        res = [ResidualBlock(c1, c2, e) for _ in range(n)]
-        res.append(Conv(c1, c2, 1, 1, None, 1, 1))
-        self.m = nn.Sequential(*res)
+        c3 = c2 // ratio
+        if c3 < 8: c3 = 8
+
+        conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
+        conv2 = Conv(c3, c3, 3, 1, None, 1, 1)
+        conv3 = Conv(c3, c3, 1, 1, None, 1, 1)
+        conv4 = Conv(c3, c2, 3, 1, None, 1, 1)
+
+        self.m = nn.Sequential(conv1, conv2, conv3, conv4)
+    
+    def forward(self, x):
+        return self.m(x) + x
+
+class ResidualBlocks2(nn.Module):
+    def __init__(self, c1, c2, n=1, ratio=1):
+        super().__init__()
+        self.m = nn.Sequential(*[ResidualBlock2(c1, c2, ratio) for _ in range(n)])
     
     def forward(self, x):
         return self.m(x)
@@ -132,16 +146,6 @@ class FuseResidualBlocks(nn.Module):
         super().__init__()
         self.m = nn.Sequential(*[FuseResidualBlock(c1, c2, e) for _ in range(n)])
 
-    def forward(self, x):
-        return self.m(x)
-
-class FuseResidualBlocks2(nn.Module):
-    def __init__(self, c1, c2, n=1, e=1.0):
-        super().__init__()
-        res = [FuseResidualBlock(c1, c2, e) for _ in range(n)]
-        res.append(Conv(c1, c2, 1, 1, None, 1, 1))
-        self.m = nn.Sequential(*res)
-    
     def forward(self, x):
         return self.m(x)
 
