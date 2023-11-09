@@ -66,21 +66,23 @@ class BottleneckCSP2(nn.Module):
         return self.cv3(self.act(self.bn(torch.cat((y1, y2), dim=1))))
 
 class ResidualBlock(nn.Module):
-    def __init__(self, c1, c2, e=1.0):
+    def __init__(self, c1, c2, ratio=1):
         super().__init__()
-        c3 = int(c1 * e)
+        c3 = c2 // ratio
         if c3 < 8: c3 = 8
         
-        self.conv1 = Conv(c1, c3, 1, 1)
-        self.conv2 = Conv(c3, c2, 3, 1)
+        conv1 = Conv(c1, c3, 1, 1)
+        conv2 = Conv(c3, c2, 3, 1)
+
+        self.m = nn.Sequential(conv1, conv2)
 
     def forward(self, x):
-        return x + self.conv2(self.conv1(x))
+        return x + self.m(x)
 
 class ResidualBlocks(nn.Module):
-    def __init__(self, c1, c2, n=1, e=1.0):
+    def __init__(self, c1, c2, n=1, ratio=1):
         super().__init__()
-        self.m = nn.Sequential(*[ResidualBlock(c1, c2, e) for _ in range(n)])
+        self.m = nn.Sequential(*[ResidualBlock(c1, c2, ratio) for _ in range(n)])
 
     def forward(self, x):
         return self.m(x)
