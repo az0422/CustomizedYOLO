@@ -557,6 +557,41 @@ class GhostHeaderConv(nn.Module):
         y5 = self.conv5(y4)
 
         return self.conv6(torch.concat([y1, y3, y4, y5], axis=1))
+    
+class GhostHeaderConvLite(nn.Module):
+    def __init__(self, c1, c2):
+        super().__init__()
+
+        c3 = c2 // 2
+
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
+        self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1)
+        self.conv3 = Conv(c2, c2, 1, 1, None, 1, 1)
+    
+    def forward(self, x):
+        y1 = self.conv1(x)
+        y2 = self.conv2(y1)
+
+        return self.conv3(torch.concat([y1, y2], axis=1))
+
+class DetectCustomv4Lite(Detect):
+    def __init__(self, nc=80, ch=()):
+        super().__init__(nc, ch)
+
+        c2, c3 = max((16, ch[0] // 4, self.reg_max * 4)), max(ch[0], self.nc)  # channels
+        self.cv2 = nn.ModuleList(
+            nn.Sequential(
+                GhostHeaderConvLite(x, c2),
+                nn.Conv2d(c2, 4 * self.reg_max, 1)
+            ) for x in ch
+        )
+
+        self.cv3 = nn.ModuleList(
+            nn.Sequential(
+                GhostHeaderConvLite(x, c3),
+                nn.Conv2d(c3, self.nc, 1)
+            ) for x in ch
+        )
 
 class DetectCustomv4(Detect):
     def __init__(self, nc=80, ch=()):
