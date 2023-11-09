@@ -94,9 +94,10 @@ class ResidualBlock2(nn.Module):
         conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
         conv2 = Conv(c3, c3, 3, 1, None, 1, 1)
         conv3 = Conv(c3, c3, 1, 1, None, 1, 1)
-        conv4 = Conv(c3, c2, 3, 1, None, 1, 1)
+        conv4 = Conv(c3, c3, 3, 1, None, 1, 1)
+        conv5 = Conv(c3, c2, 1, 1, None, 1, 1)
 
-        self.m = nn.Sequential(conv1, conv2, conv3, conv4)
+        self.m = nn.Sequential(conv1, conv2, conv3, conv4, conv5)
     
     def forward(self, x):
         return self.m(x) + x
