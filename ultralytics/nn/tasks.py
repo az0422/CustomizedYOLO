@@ -174,7 +174,8 @@ class BaseModel(nn.Module):
         self = super()._apply(fn)
         m = self.model[-1]  # Detect()
         if isinstance(m, (Detect, Segment, 
-                          DetectCustomv1, DetectCustomv2, DetectCustomv2Lite, DetectCustomv3, DetectCustomv4, DetectCustomv4Lite)):
+                          DetectCustomv1, DetectCustomv2, DetectCustomv2Lite, DetectCustomv3, 
+                          DetectCustomv4, DetectCustomv4Lite, DetectCustomv4Lite2)):
             m.stride = fn(m.stride)
             m.anchors = fn(m.anchors)
             m.strides = fn(m.strides)
@@ -234,7 +235,8 @@ class DetectionModel(BaseModel):
         # Build strides
         m = self.model[-1]  # Detect()
         if isinstance(m, (Detect, Segment, Pose, 
-                          DetectCustomv1, DetectCustomv2, DetectCustomv2Lite, DetectCustomv3, DetectCustomv4, DetectCustomv4Lite)):
+                          DetectCustomv1, DetectCustomv2, DetectCustomv2Lite, DetectCustomv3, 
+                          DetectCustomv4, DetectCustomv4Lite, DetectCustomv4Lite2)):
             s = 256  # 2x min stride
             m.inplace = self.inplace
             forward = lambda x: self.forward(x)[0] if isinstance(m, (Segment, Pose)) else self.forward(x)
@@ -605,7 +607,8 @@ def attempt_load_weights(weights, device=None, inplace=True, fuse=False):
     for m in ensemble.modules():
         t = type(m)
         if t in (nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Segment, 
-                 DetectCustomv1, DetectCustomv2, DetectCustomv2Lite, DetectCustomv3, DetectCustomv4, DetectCustomv4Lite):
+                 DetectCustomv1, DetectCustomv2, DetectCustomv2Lite, DetectCustomv3, 
+                 DetectCustomv4, DetectCustomv4Lite, DetectCustomv4Lite2):
             m.inplace = inplace
         elif t is nn.Upsample and not hasattr(m, 'recompute_scale_factor'):
             m.recompute_scale_factor = None  # torch 1.11.0 compatibility
@@ -642,7 +645,8 @@ def attempt_load_one_weight(weight, device=None, inplace=True, fuse=False):
     for m in model.modules():
         t = type(m)
         if t in (nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Segment, 
-                 DetectCustomv1, DetectCustomv2, DetectCustomv2Lite, DetectCustomv3, DetectCustomv4, DetectCustomv4Lite):
+                 DetectCustomv1, DetectCustomv2, DetectCustomv2Lite, DetectCustomv3, 
+                 DetectCustomv4, DetectCustomv4Lite, DetectCustomv4Lite2):
             m.inplace = inplace
         elif t is nn.Upsample and not hasattr(m, 'recompute_scale_factor'):
             m.recompute_scale_factor = None  # torch 1.11.0 compatibility
@@ -707,7 +711,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
         elif m in (Detect, Segment, Pose, 
-                   DetectCustomv1, DetectCustomv2, DetectCustomv2Lite, DetectCustomv3, DetectCustomv4, DetectCustomv4Lite):
+                   DetectCustomv1, DetectCustomv2, DetectCustomv2Lite, DetectCustomv3, 
+                   DetectCustomv4, DetectCustomv4Lite, DetectCustomv4Lite2):
             args.append([ch[x] for x in f])
             if m is Segment:
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
