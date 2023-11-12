@@ -565,7 +565,7 @@ class GhostHeaderConvLite(nn.Module):
         c3 = c2 // 2
 
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
-        self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1)
+        self.conv2 = Conv(c3, c3, 3, 1, None, 1, 1)
         self.conv3 = Conv(c2, c2, 1, 1, None, 1, 1)
     
     def forward(self, x):
