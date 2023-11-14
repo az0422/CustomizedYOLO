@@ -279,14 +279,14 @@ class DWResidualBlocks2(nn.Module):
         return self.m(x)
 
 class CSPDWResidualBlocks2(nn.Module):
-    def __init__(self, c1, c2, n=1, dwratio=1):
+    def __init__(self, c1, c2, n=1, dwratio=1, btratio=1):
         super().__init__()
         c3 = c2 // 2
         
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
         self.conv2 = Conv(c1, c3, 1, 1, None, 1, 1)
         self.conv3 = Conv(c2, c2, 1, 1, None, 1, 1)
-        self.m = DWResidualBlocks2(c3, c3, n, dwratio)
+        self.m = DWResidualBlocks2(c3, c3, n, dwratio, btratio)
     
     def forward(self, x):
         a = self.conv1(x)
