@@ -531,9 +531,10 @@ class HeaderConvTiny(nn.Module):
         super().__init__()
         
         conv1 = Conv(c1, c2, 1, 1)
-        m = CSPDWResidualBlocks2(c2, c2, 2, 1, 2)
+        conv2 = Conv(c2, c2, 3, 1, None, c2, 1)
+        conv3 = Conv(c2, c2, 1, 1)
 
-        self.m = nn.Sequential(conv1, m)
+        self.m = nn.Sequential(conv1, conv2, conv3)
     
     def forward(self, x):
         return self.m(x)
