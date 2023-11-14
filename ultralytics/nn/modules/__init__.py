@@ -33,20 +33,20 @@ __all__ = ('Conv', 'Conv2', 'LightConv', 'RepConv', 'DWConv', 'DWConvTranspose2d
            'DeformableTransformerDecoder', 'DeformableTransformerDecoderLayer', 'MSDeformAttn', 'MLP')
 
 from .custom import (Groups, GroupsF, Shortcut, ResidualBlock, ResidualBlocks, SEBlock, EfficientBlock, PoolResidualBlock,
-                     PoolResidualBlocks, InceptionBlock, SPPCSP, SPPFCSP, SPPFCSPF, DetectCustomv1, BottleneckCSP2,
+                     PoolResidualBlocks, InceptionBlock, SPPCSP, SPPFCSP, SPPFCSPF, BottleneckCSP2,
                      Bagging, MobileBlock, SEResidualBlock, SEResidualBlocks, SEResidualBlocks2,
                      XceptionBlock, CSPResidualBlocks, CSPInceptionBlock, CSPXceptionBlock, CSPMobileBlock,
                      CSPEfficientBlock, MobileBlockv2, DWResidualBlock, DWResidualBlocks, FuseResidualBlock,
-                     FuseResidualBlocks,  DetectCustomv2, DetectCustomv2Lite, DWResidualBlock2, DWResidualBlocks2,
-                     ResNextBlock, ResNextBlocks, DetectCustomv3, DetectCustomv4, ResidualBlock2, ResidualBlocks2,
-                     DetectCustomv4Lite, DetectCustomv4Lite2, CSPDWResidualBlocks, CSPDWResidualBlocks2, DetectCustomv5)
+                     FuseResidualBlocks, DWResidualBlock2, DWResidualBlocks2,
+                     ResNextBlock, ResNextBlocks,  ResidualBlock2, ResidualBlocks2,
+                      CSPDWResidualBlocks, CSPDWResidualBlocks2, DetectorTiny)
 
 __all__ = list(__all__) + [
             'Groups', 'GroupsF', 'Shortcut', 'ResidualBlock', 'ResidualBlocks', 'SEBlock', 'EfficientBlock', 'PoolResidualBlock',
-            'PoolResidualBlocks', 'InceptionBlock', 'SPPCSP', 'SPPFCSP', 'SPPFCSPF', 'DetectCustomv1', 'BottleneckCSP2',
+            'PoolResidualBlocks', 'InceptionBlock', 'SPPCSP', 'SPPFCSP', 'SPPFCSPF', 'BottleneckCSP2',
             'Bagging', "MobileBlock", "SEResidualBlock", "SEResidualBlocks",  "SEResidualBlocks2",
             "XceptionBlock", "CSPResidualBlocks", "CSPInceptionBlock", "CSPXceptionBlock", "CSPMobileBlock",
             "CSPEfficientBlock", "MobileBlockv2", "DWResidualBlock", "DWResidualBlocks", "FuseResidualBlock",
-            "FuseResidualBlocks",  "DetectCustomv2", "DetectCustomv2Lite","DWResidualBlock2", "DWResidualBlocks2",
-            "ResNextBlock", "ResNextBlocks", "DetectCustomv3", "DetectCustomv4", "ResidualBlock2", "ResidualBlocks2",
-            "DetectCustomv4Lite", "DetectCustomv4Lite2", "CSPDWResidualBlocks", "CSPDWResidualBlocks2", "DetectCustomv5"]
+            "FuseResidualBlocks", "DWResidualBlock2", "DWResidualBlocks2",
+            "ResNextBlock", "ResNextBlocks",  "ResidualBlock2", "ResidualBlocks2",
+            "CSPDWResidualBlocks", "CSPDWResidualBlocks2", "DetectorTiny"]
