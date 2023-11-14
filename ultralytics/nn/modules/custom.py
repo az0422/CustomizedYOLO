@@ -3,7 +3,7 @@ import math
 import torch
 import torch.nn as nn
 
-from ultralytics.nn.modules import Conv, Conv2, Bottleneck, Detect, DFL
+from ultralytics.nn.modules import Conv, Conv2, Bottleneck, Detect, DFL, LightConv, GhostConv
 
 class Groups(nn.Module):
     def __init__(self, groups=2, group_id=0, dim=1):
@@ -531,10 +531,9 @@ class HeaderConvTiny(nn.Module):
         super().__init__()
         
         conv1 = Conv(c1, c2, 1, 1)
-        conv2 = Conv(c2, c2, 3, 1, None, c2, 1)
-        conv3 = Conv(c2, c2, 1, 1)
+        conv2 = LightConv(c2, c2, 3, 1)
 
-        self.m = nn.Sequential(conv1, conv2, conv3)
+        self.m = nn.Sequential(conv1, conv2)
     
     def forward(self, x):
         return self.m(x)
