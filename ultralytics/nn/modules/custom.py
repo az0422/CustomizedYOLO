@@ -128,6 +128,8 @@ class CSPResidualBlocks(nn.Module):
         
         return self.conv3(torch.cat([x1, y], axis=1))
 
+
+
 class FuseResidualBlock(nn.Module):
     def __init__(self, c1, c2, e=1.0):
         super().__init__()
@@ -237,6 +239,23 @@ class DWResidualBlocks(nn.Module):
     def forward(self, x):
         return self.m(x)
 
+class CSPDWResidualBlocks(nn.Module):
+    def __init__(self, c1, c2, n=1, dwratio=1):
+        super().__init__()
+        c3 = c2 // 2
+        
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
+        self.conv2 = Conv(c1, c3, 1, 1, None, 1, 1)
+        self.conv3 = Conv(c2, c2, 1, 1, None, 1, 1)
+        self.m = DWResidualBlocks(c3, c3, n, dwratio)
+    
+    def forward(self, x):
+        a = self.conv1(x)
+        b = self.conv2(x)
+        y = self.m(b)
+
+        return self.conv3(torch.concat([a, y], axis=1))
+
 class DWResidualBlock2(nn.Module):
     def __init__(self, c1, c2, dwratio=1, btratio=1):
         super().__init__()
@@ -251,13 +270,30 @@ class DWResidualBlock2(nn.Module):
     def forward(self, x):
         return x + self.conv4(self.conv3(self.conv2(self.conv1(x))))
 
-class DWResidualBlocks2l(nn.Module):
+class DWResidualBlocks2(nn.Module):
     def __init__(self, c1, c2, n=1, dwratio=1, btratio=1):
         super().__init__()
         self.m = nn.Sequential(*[DWResidualBlock2(c1, c2, dwratio, btratio) for _ in range(n)])
     
     def forward(self, x):
         return self.m(x)
+
+class CSPDWResidualBlocks2(nn.Module):
+    def __init__(self, c1, c2, n=1, dwratio=1):
+        super().__init__()
+        c3 = c2 // 2
+        
+        self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
+        self.conv2 = Conv(c1, c3, 1, 1, None, 1, 1)
+        self.conv3 = Conv(c2, c2, 1, 1, None, 1, 1)
+        self.m = DWResidualBlocks2(c3, c3, n, dwratio)
+    
+    def forward(self, x):
+        a = self.conv1(x)
+        b = self.conv2(x)
+        y = self.m(b)
+
+        return self.conv3(torch.concat([a, y], axis=1))
 
 class ResNextBlock(nn.Module):
     def __init__(self, c1, c2, expand=1.0, dwratio=1):
@@ -581,7 +617,7 @@ class GhostHeaderConvLite2(nn.Module):
         c3 = c2 // 2
 
         self.conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
-        self.conv2 = Conv(c3, c3, 1, 1, None, 1, 1)
+        self.conv2 = Conv(c3, c3, 3, 1, None, c3, 1)
         self.conv3 = Conv(c2, c2, 1, 1, None, 1, 1)
     
     def forward(self, x):

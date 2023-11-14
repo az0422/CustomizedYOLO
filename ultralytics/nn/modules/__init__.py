@@ -37,9 +37,9 @@ from .custom import (Groups, GroupsF, Shortcut, ResidualBlock, ResidualBlocks, S
                      Bagging, MobileBlock, SEResidualBlock, SEResidualBlocks, SEResidualBlocks2,
                      XceptionBlock, CSPResidualBlocks, CSPInceptionBlock, CSPXceptionBlock, CSPMobileBlock,
                      CSPEfficientBlock, MobileBlockv2, DWResidualBlock, DWResidualBlocks, FuseResidualBlock,
-                     FuseResidualBlocks,  DetectCustomv2, DetectCustomv2Lite, DWResidualBlock2, DWResidualBlocks2l,
+                     FuseResidualBlocks,  DetectCustomv2, DetectCustomv2Lite, DWResidualBlock2, DWResidualBlocks2,
                      ResNextBlock, ResNextBlocks, DetectCustomv3, DetectCustomv4, ResidualBlock2, ResidualBlocks2,
-                     DetectCustomv4Lite, DetectCustomv4Lite2)
+                     DetectCustomv4Lite, DetectCustomv4Lite2, CSPDWResidualBlocks, CSPDWResidualBlocks2)
 
 __all__ = list(__all__) + [
             'Groups', 'GroupsF', 'Shortcut', 'ResidualBlock', 'ResidualBlocks', 'SEBlock', 'EfficientBlock', 'PoolResidualBlock',
@@ -47,6 +47,6 @@ __all__ = list(__all__) + [
             'Bagging', "MobileBlock", "SEResidualBlock", "SEResidualBlocks",  "SEResidualBlocks2",
             "XceptionBlock", "CSPResidualBlocks", "CSPInceptionBlock", "CSPXceptionBlock", "CSPMobileBlock",
             "CSPEfficientBlock", "MobileBlockv2", "DWResidualBlock", "DWResidualBlocks", "FuseResidualBlock",
-            "FuseResidualBlocks",  "DetectCustomv2", "DetectCustomv2Lite","DWResidualBlock2", "DWResidualBlocks2l",
+            "FuseResidualBlocks",  "DetectCustomv2", "DetectCustomv2Lite","DWResidualBlock2", "DWResidualBlocks2",
             "ResNextBlock", "ResNextBlocks", "DetectCustomv3", "DetectCustomv4", "ResidualBlock2", "ResidualBlocks2",
-            "DetectCustomv4Lite", "DetectCustomv4Lite2"]
+            "DetectCustomv4Lite", "DetectCustomv4Lite2", "CSPDWResidualBlocks", "CSPDWResidualBlocks2"]
