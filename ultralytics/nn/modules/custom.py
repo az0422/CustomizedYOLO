@@ -632,15 +632,17 @@ class DetectCustomv5(Detect):
 
         self.cv2 = nn.ModuleList(
             nn.Sequential(
-                SEResidualBlock(x, x, 4),
-                nn.Conv2d(x, 4 * self.reg_max, 1)
+                Conv(x, x // 2, 1, 1),
+                SEResidualBlock(x // 2, x // 2, 4),
+                nn.Conv2d(x // 2, 4 * self.reg_max, 1)
             ) for x in ch
         )
 
         self.cv3 = nn.ModuleList(
             nn.Sequential(
-                SEResidualBlock(x, x, 4),
-                nn.Conv2d(x, self.nc, 1)
+                Conv(x, x // 4, 1, 1),
+                SEResidualBlock(x // 4, x // 4, 4),
+                nn.Conv2d(x // 4, self.nc, 1)
             ) for x in ch
         )
 
