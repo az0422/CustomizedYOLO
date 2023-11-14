@@ -626,6 +626,27 @@ class GhostHeaderConvLite2(nn.Module):
 
         return self.conv3(torch.concat([y1, y2], axis=1))
 
+class DetectCustomv5(Detect):
+    def __init__(self, nc=80, ch=()):
+        super().__init__(nc, ch)
+
+        c2, c3 = max((16, ch[0] // 4, self.reg_max * 4)), max(ch[0], self.nc)  # channels
+        self.cv2 = nn.ModuleList(
+            nn.Sequential(
+                Conv(x, c2, 3, 1),
+                SEResidualBlock(c2, c2, 4),
+                nn.Conv2d(c2, 4 * self.reg_max, 1)
+            ) for x in ch
+        )
+
+        self.cv3 = nn.ModuleList(
+            nn.Sequential(
+                Conv(x, c3, 3, 1),
+                SEResidualBlock(c3, c3, 4),
+                nn.Conv2d(c3, self.nc, 1)
+            ) for x in ch
+        )
+
 class DetectCustomv4Lite2(Detect):
     def __init__(self, nc=80, ch=()):
         super().__init__(nc, ch)
