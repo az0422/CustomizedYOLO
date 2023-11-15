@@ -295,6 +295,29 @@ class CSPDWResidualBlocks2(nn.Module):
 
         return self.conv3(torch.concat([a, y], axis=1))
 
+class DWResidualBlock3(nn.Module):
+    def __init__(self, c1, c2, dwratio=1, btratio=1):
+        super().__init__()
+        c3 = c2 // btratio
+
+        conv1 = Conv(c1, c3, 1, 1, None, 1, 1)
+        conv2 = Conv(c3, c3, 3, 1, None, c3 // dwratio, 1)
+        conv3 = Conv(c3, c2, 1, 1, None, 1, 1)
+
+        self.m = nn.Sequential(conv1, conv2, conv3)
+    
+    def forward(self, x):
+        return x + self.m(x)
+
+class DWResidualBlocks3(nn.Module):
+    def __init__(self, c1, c2, n=1, dwratio=1, btratio=1):
+        super().__init__()
+
+        self.m = nn.Sequential(*[DWResidualBlock3(c1, c2, dwratio, btratio) for _ in range(n)])
+    
+    def forward(self, x):
+        return self.m(x)
+
 class ResNextBlock(nn.Module):
     def __init__(self, c1, c2, expand=1.0, dwratio=1):
         super().__init__()

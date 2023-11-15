@@ -39,7 +39,7 @@ from .custom import (Groups, GroupsF, Shortcut, ResidualBlock, ResidualBlocks, S
                      CSPEfficientBlock, MobileBlockv2, DWResidualBlock, DWResidualBlocks, FuseResidualBlock,
                      FuseResidualBlocks, DWResidualBlock2, DWResidualBlocks2,
                      ResNextBlock, ResNextBlocks,  ResidualBlock2, ResidualBlocks2,
-                      CSPDWResidualBlocks, CSPDWResidualBlocks2, DetectorTiny)
+                      CSPDWResidualBlocks, CSPDWResidualBlocks2, DetectorTiny, DWResidualBlock3, DWResidualBlocks3)
 
 __all__ = list(__all__) + [
             'Groups', 'GroupsF', 'Shortcut', 'ResidualBlock', 'ResidualBlocks', 'SEBlock', 'EfficientBlock', 'PoolResidualBlock',
@@ -49,4 +49,4 @@ __all__ = list(__all__) + [
             "CSPEfficientBlock", "MobileBlockv2", "DWResidualBlock", "DWResidualBlocks", "FuseResidualBlock",
             "FuseResidualBlocks", "DWResidualBlock2", "DWResidualBlocks2",
             "ResNextBlock", "ResNextBlocks",  "ResidualBlock2", "ResidualBlocks2",
-            "CSPDWResidualBlocks", "CSPDWResidualBlocks2", "DetectorTiny"]
+            "CSPDWResidualBlocks", "CSPDWResidualBlocks2", "DetectorTiny", "DWResidualBlock3", "DWResidualBlocks3"]
