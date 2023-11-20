@@ -577,9 +577,8 @@ class HeaderConvTinyv2(nn.Module):
 
         conv1 = Conv(c1, c2, 1, 1)
         conv2 = LightConv(c2, c2, 3, 1)
-        conv3 = LightConv(c2, c2, 3, 1)
 
-        self.m = nn.Sequential(conv1, conv2, conv3)
+        self.m = nn.Sequential(conv1, conv2)
     
     def forward(self, x):
         return self.m(x)
