@@ -576,7 +576,7 @@ class HeaderConvTinyv2(nn.Module):
         super().__init__()
 
         conv1 = Conv(c1, c2, 1, 1)
-        conv2 = Conv(c2, c2, 3, 1)
+        conv2 = LightConv(c2, c2, 3, 1)
 
         self.m = nn.Sequential(conv1, conv2)
     
