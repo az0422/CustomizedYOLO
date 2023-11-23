@@ -15,19 +15,19 @@ and [YOLOv8](https://github.com/ultralytics/ultralytics).
 
 ## Dataset YAML
 
-A YAML (Yet Another Markup Language) file is used to define the dataset configuration. It contains information about the dataset's paths, classes, and other relevant information. In the case of the COCO8-Seg dataset, the `coco8-seg.yaml` file is maintained at [https://github.com/ultralytics/ultralytics/blob/main/ultralytics/datasets/coco8-seg.yaml](https://github.com/ultralytics/ultralytics/blob/main/ultralytics/datasets/coco8-seg.yaml).
+A YAML (Yet Another Markup Language) file is used to define the dataset configuration. It contains information about the dataset's paths, classes, and other relevant information. In the case of the COCO8-Seg dataset, the `coco8-seg.yaml` file is maintained at [https://github.com/ultralytics/ultralytics/blob/main/ultralytics/cfg/datasets/coco8-seg.yaml](https://github.com/ultralytics/ultralytics/blob/main/ultralytics/cfg/datasets/coco8-seg.yaml).
 
-!!! example "ultralytics/datasets/coco8-seg.yaml"
+!!! Example "ultralytics/cfg/datasets/coco8-seg.yaml"
 
     ```yaml
-    --8<-- "ultralytics/datasets/coco8-seg.yaml"
+    --8<-- "ultralytics/cfg/datasets/coco8-seg.yaml"
     ```
 
 ## Usage
 
 To train a YOLOv8n-seg model on the COCO8-Seg dataset for 100 epochs with an image size of 640, you can use the following code snippets. For a comprehensive list of available arguments, refer to the model [Training](../../modes/train.md) page.
 
-!!! example "Train Example"
+!!! Example "Train Example"
 
     === "Python"
 
@@ -62,7 +62,7 @@ The example showcases the variety and complexity of the images in the COCO8-Seg 
 
 If you use the COCO dataset in your research or development work, please cite the following paper:
 
-!!! note ""
+!!! Quote ""
 
     === "BibTeX"
 
