@@ -20,7 +20,7 @@ try:
 except ImportError:
     thop = None
 
-CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2)
+CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3)
 
 class BaseModel(nn.Module):
     """The BaseModel class serves as a base class for all the models in the Ultralytics YOLO family."""
@@ -734,14 +734,15 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                    CSPEfficientBlock, MobileBlockv2, DWResidualBlock, DWResidualBlocks,
                    FuseResidualBlock, FuseResidualBlocks, DWResidualBlock2, DWResidualBlocks2,
                    ResNextBlock, ResNextBlocks, ResidualBlock2, ResidualBlocks2, CSPDWResidualBlocks,
-                   CSPDWResidualBlocks2, DWResidualBlocks3, DWResidualBlock3, CSPDWResidualBlocks3):
+                   CSPDWResidualBlocks2, DWResidualBlocks3, DWResidualBlock3, CSPDWResidualBlocks3,
+                   C2Tiny, C2Aug):
             c1, c2 = ch[f], make_divisible(min(args[0], max_channels) * width, 8)
             args = [c1, c2, *args[1:]]
             
             if m in (ResidualBlocks, PoolResidualBlocks, SEResidualBlocks, ResidualBlocks2,
                      SEResidualBlocks2, CSPResidualBlocks, DWResidualBlocks, FuseResidualBlocks,
                      DWResidualBlocks2, ResNextBlocks, CSPDWResidualBlocks, CSPDWResidualBlocks2,
-                     DWResidualBlocks3, CSPDWResidualBlocks3):
+                     DWResidualBlocks3, CSPDWResidualBlocks3, C2Tiny, C2Aug):
                 args.insert(2, n)
                 n = 1
         else:
