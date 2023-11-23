@@ -18,4 +18,4 @@ Same than Ultralytics YOLOv8
  - YOLOv8-mobile
  - YOLOv8-mobile-fast
  - YOLOv8-mobile-tiny
- - YOLOv8-mobile-tiny3l
+ - YOLOv8-mobile-tiny-3l
