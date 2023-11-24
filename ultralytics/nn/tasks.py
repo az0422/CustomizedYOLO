@@ -21,6 +21,7 @@ except ImportError:
     thop = None
 
 CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3)
+CUSTOM_DETECTOR_STR = ('detectortiny', 'detectortinyv2', 'detectortinyv3')
 
 class BaseModel(nn.Module):
     """The BaseModel class serves as a base class for all the models in the Ultralytics YOLO family."""
@@ -817,13 +818,13 @@ def guess_model_task(model):
         m = cfg['head'][-1][-2].lower()  # output module name
         if m in ('classify', 'classifier', 'cls', 'fc'):
             return 'classify'
-        if m == 'detect':
+        if m in ('detect', ) + CUSTOM_DETECTOR_STR:
             return 'detect'
         if m == 'segment':
             return 'segment'
         if m == 'pose':
             return 'pose'
-
+        
     # Guess from model cfg
     if isinstance(model, dict):
         with contextlib.suppress(Exception):
@@ -847,6 +848,10 @@ def guess_model_task(model):
                 return 'classify'
             elif isinstance(m, Pose):
                 return 'pose'
+            
+            for detector in CUSTOM_DETECTOR:
+                if isinstance(m, detector):
+                    return 'detect'
 
     # Guess from model filename
     if isinstance(model, (str, Path)):
