@@ -253,7 +253,7 @@ class CSPDWResidualBlocks(nn.Module):
         b = self.conv2(x)
         y = self.m(b)
 
-        return self.conv3(torch.concat([a, y], axis=1))
+        return self.conv3(torch.cat([a, y], axis=1))
 
 class DWResidualBlock2(nn.Module):
     def __init__(self, c1, c2, dwratio=1, btratio=1):
@@ -292,7 +292,7 @@ class CSPDWResidualBlocks2(nn.Module):
         b = self.conv2(x)
         y = self.m(b)
 
-        return self.conv3(torch.concat([a, y], axis=1))
+        return self.conv3(torch.cat([a, y], axis=1))
 
 class DWResidualBlock3(nn.Module):
     def __init__(self, c1, c2, dwratio=1, btratio=1):
@@ -332,7 +332,7 @@ class CSPDWResidualBlocks3(nn.Module):
         b = self.conv2(x)
         y = self.m(b)
 
-        return self.conv3(torch.concat([a, y], axis=1))
+        return self.conv3(torch.cat([a, y], axis=1))
 
 class C2Tiny(nn.Module):
     def __init__(self, c1, c2, n=1, dwratio=1, btratio=1):
@@ -345,7 +345,7 @@ class C2Tiny(nn.Module):
     def forward(self, x):
         a, b = self.conv1(x).chunk(2, 1)
         x1 = self.m(a)
-        return self.conv2(torch.concat([b, x1], axis=1))
+        return self.conv2(torch.cat([b, x1], axis=1))
 
 class C2Aug(nn.Module):
     def __init__(self, c1, c2, n=1, dwratio=1, btratio=1):
@@ -355,7 +355,7 @@ class C2Aug(nn.Module):
         self.conv2 = Conv(c2, c2, 1, 1, None, 1, 1)
 
         self.conv3 = Conv(c2 // 2, c2 // 4, 1, 1, None, 1, 1)
-        self.conv5 = Conv(c2 // 4, c2 // 4, 3, 1, None, c2 // 4, 1)
+        self.conv4 = Conv(c2 // 4, c2 // 4, 3, 1, None, c2 // 4, 1)
 
         self.m = nn.Sequential(*[DWResidualBlock3(c2 // 2, c2 // 2, dwratio, btratio) for _ in range(n)])
     
@@ -363,9 +363,9 @@ class C2Aug(nn.Module):
         a, b = self.conv1(x).chunk(2, 1)
         y1 = self.m(a)
         x2 = self.conv3(b)
-        y2 = self.conv5(x2)
+        y2 = self.conv4(x2)
 
-        return self.conv2(torch.concat([y1, y2, x2], axis=1))
+        return self.conv2(torch.cat([y1, y2, x2], axis=1))
 
 class ResNextBlock(nn.Module):
     def __init__(self, c1, c2, expand=1.0, dwratio=1):
@@ -487,7 +487,7 @@ class CSPXceptionBlock(nn.Module):
         x1 = self.conv1(x)
         x2 = self.conv2(x)
         y1 = self.xception(x2)
-        return self.conv3(torch.concat([x1, y1], axis=1))
+        return self.conv3(torch.cat([x1, y1], axis=1))
 
 class MobileBlock(nn.Module):
     def __init__(self, c1, c2, stride=1):
@@ -729,7 +729,7 @@ class DetectorTinyv3(nn.Module):
         shape = x[0].shape  # BCHW
         for i in range(self.nl):
             t = self.cv1[i](x[i])
-            x[i] = torch.concat([self.cv2[i](t), self.cv3[i](t)], axis=1)
+            x[i] = torch.cat([self.cv2[i](t), self.cv3[i](t)], axis=1)
         if self.training:
             return x
         elif self.dynamic or self.shape != shape:
