@@ -557,7 +557,14 @@ def torch_safe_load(weight):
     from ultralytics.utils.downloads import attempt_download_asset
 
     check_suffix(file=weight, suffix='.pt')
-    file = attempt_download_asset(weight)  # search online if missing locally
+
+    file = None
+    
+    if weight.startswith("yolov8-mobile"):
+        file = attempt_download_asset(weight, repo="az0422/yolov8-mobile-weights", release="v0.01")
+    else:
+        file = attempt_download_asset(weight)  # search online if missing locally
+    
     try:
         with temporary_modules({
                 'ultralytics.yolo.utils': 'ultralytics.utils',
