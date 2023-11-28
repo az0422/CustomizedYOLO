@@ -143,6 +143,7 @@ tests/
 .DS_Store
 
 # Neural Network weights -----------------------------------------------------------------------------------------------
+!ultralytics/cfg/models/v8-mobile/*.pt
 weights/
 *.weights
 *.pt
