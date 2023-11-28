@@ -18,7 +18,25 @@ Same than Ultralytics YOLOv8
  - YOLOv8-mobile
  - YOLOv8-mobile-fast
  - YOLOv8-mobile-tiny
- - YOLOv8-mobile-tiny-3l
 
 ### Pre-trained Weights
-Comming Soon...
+ - YOLOv8-mobile.pt # has an error
+ - YOLOv8-mobile-fast.pt # has an error
+ - YOLOv8-mobile-tiny.pt
+
+### Performance of models
+#### System Environment
+ - CPU: Intel Xeon Silver 4216 x2
+ - RAM: 192GB DDR4 3200MHz
+ - GPU: RTX A5000 x3
+
+#### Performance
+| Model | Parameters | GFLOPS | mAP50-95 | recall | precision | inference speed |
+|-------|------------|--------|----------|--------|-----------|-----------------|
+| YOLOv8-mobile | - | - | - | - | - | - | - |
+| YOLOv8-mobile-fast | - | - | - | - | - | - | - |
+| YOLOv8-mobile-tiny | 1368056 | 2.5GFLOPS | 26.4% | 38.4% | 53.9% | 6.9ms |
+
+data: coco.yaml (batch 1)
+
+checkpoint: epochs 300
