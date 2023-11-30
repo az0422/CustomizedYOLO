@@ -15,9 +15,9 @@ Same than Ultralytics YOLOv8
 
 ## Included New Models
 ### Configuration
- - YOLOv8-mobile
- - YOLOv8-mobile-fast
- - YOLOv8-mobile-tiny
+ - YOLOv8-mobile.yaml
+ - YOLOv8-mobile-fast.yaml
+ - YOLOv8-mobile-tiny.yaml
 
 ### Pre-trained Weights
  - YOLOv8-mobile.pt # has an error
