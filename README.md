@@ -35,7 +35,7 @@ Same than Ultralytics YOLOv8
 |-------|------------|--------|----------|--------|-----------|-----------------|
 | YOLOv8-mobile | - | - | - | - | - | - | - |
 | YOLOv8-mobile-fast | - | - | - | - | - | - | - |
-| YOLOv8-mobile-tiny | 1368056 | 2.5GFLOPS | 26.4% | 38.4% | 53.9% | 6.9ms |
+| YOLOv8-mobile-tiny | 1.37M | 2.5 | 26.4% | 38.4% | 53.9% | 6.9ms |
 
 data: coco.yaml (batch 1)
 
