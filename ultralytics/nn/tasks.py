@@ -561,7 +561,7 @@ def torch_safe_load(weight):
     file = None
     
     if str(weight).startswith("yolov8-mobile"):
-        file = attempt_download_asset(weight, repo="az0422/yolov8-mobile-weights", release="v0.01")
+        file = attempt_download_asset(weight, repo="az0422/yolov8-mobile-weights", release="v0.02")
     else:
         file = attempt_download_asset(weight)  # search online if missing locally
     
