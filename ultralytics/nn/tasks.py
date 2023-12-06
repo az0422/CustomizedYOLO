@@ -20,8 +20,8 @@ try:
 except ImportError:
     thop = None
 
-CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3)
-CUSTOM_DETECTOR_STR = ('detectortiny', 'detectortinyv2', 'detectortinyv3')
+CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3, DetectorTinyv4)
+CUSTOM_DETECTOR_STR = ('detectortiny', 'detectortinyv2', 'detectortinyv3', 'detectortinyv4')
 
 class BaseModel(nn.Module):
     """The BaseModel class serves as a base class for all the models in the Ultralytics YOLO family."""
