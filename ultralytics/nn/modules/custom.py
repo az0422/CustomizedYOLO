@@ -3,7 +3,7 @@ import math
 import torch
 import torch.nn as nn
 
-from ultralytics.nn.modules import Conv, Conv2, Bottleneck, Detect, DFL, LightConv, GhostConv
+from ultralytics.nn.modules import Conv, Conv2, Bottleneck, Detect, DFL, LightConv, GhostConv, C2f
 from ultralytics.utils.tal import TORCH_1_10, dist2bbox, make_anchors
 
 class Groups(nn.Module):
@@ -347,6 +347,26 @@ class C2Tiny(nn.Module):
         x1 = self.m(a)
         return self.conv2(torch.cat([b, x1], axis=1))
 
+class C2TinyF(C2f):
+    def __init__(self, c1, c2, n=1, dwratio=1, btratio=1):
+        super().__init__(c1, c2)
+
+        self.c = c2 // 2
+        self.conv1 = Conv(c1, c2, 1, 1, None, 1, 1)
+        self.conv2 = Conv((n + 2) * (c2 // 2), c2, 1, 1, None, 1, 1)
+        self.m = nn.ModuleList([DWResidualBlock3(c2 // 2, c2 // 2, dwratio, btratio) for _ in range(n)])
+    
+    def forward(self, x):
+        x1 = list(self.conv1(x).chunk(2, 1))
+        x1.extend(m(x1[-1]) for m in self.m)
+        return self.conv2(torch.cat(x1, 1))
+    
+    def forward_split(self, x):
+        x1 = list(self.conv1(x).split((self.c, self.c), 1))
+        x1.extend(m(x1[-1]) for m in self.m)
+        return self.conv2(torch.cat(x1, 1))
+
+
 class C2Aug(nn.Module):
     def __init__(self, c1, c2, n=1, dwratio=1, btratio=1):
         super().__init__()
@@ -366,6 +386,41 @@ class C2Aug(nn.Module):
         y2 = self.conv4(x2)
 
         return self.conv2(torch.cat([y1, y2, x2], axis=1))
+
+class C2AugF(C2f):
+    def __init__(self, c1, c2, n=1, dwratio=1, btratio=1):
+        super().__init__(c1, c2)
+
+        self.c = c2 // 2
+
+        self.conv1 = Conv(c1, c2, 1, 1, None, 1, 1)
+        self.conv2 = Conv((3 + n) * (c2 // 2), c2, 1, 1, None, 1, 1)
+
+        self.conv3 = Conv(c2 // 2, c2 // 4, 1, 1, None, 1, 1)
+        self.conv4 = Conv(c2 // 4, c2 // 4, 3, 1, None, c2 // 4, 1)
+
+        self.m = nn.ModuleList([DWResidualBlock3(c2 // 2, c2 // 2, dwratio, btratio) for _ in range(n)])
+    
+    def forward(self, x):
+        x1 = list(self.conv1(x).chunk(2, 1))
+        x1.extend(m(x1[-1]) for m in self.m)
+        x2 = x1[0]
+        y1 = self.conv3(x2)
+        y2 = self.conv4(y1)
+        x1.append(torch.cat([y1, y2], 1))
+
+        return self.conv2(torch.cat(x1, 1))
+    
+    def forward_split(self, x):
+        x1 = list(self.conv1(x).split((self.c, self.c), 1))
+        x1.extend(m(x1[-1]) for m in self.m)
+        x2 = x1[0]
+        y1 = self.conv3(x2)
+        y2 = self.conv4(y1)
+        x1.append(torch.cat([y1, y2], 1))
+
+        return self.conv2(torch.cat(x1, 1))
+
 
 class ResNextBlock(nn.Module):
     def __init__(self, c1, c2, expand=1.0, dwratio=1):
