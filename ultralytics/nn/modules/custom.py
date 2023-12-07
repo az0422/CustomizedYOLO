@@ -782,12 +782,13 @@ class DetectorTinyv4(nn.Module):
         self.no = nc + self.reg_max * 4  # number of outputs per anchor
         self.stride = torch.zeros(self.nl)  # strides computed during build
 
+        c1 = self.reg_max * 4 + 32
         c2 = self.reg_max * 4  # channels
         c3 = self.nc
 
-        self.cv1 = nn.ModuleList(HeaderConvTinyv2(x, c2) for x in ch)
-        self.cv2 = nn.ModuleList(nn.Conv2d(c2, c2, 1) for _ in ch)
-        self.cv3 = nn.ModuleList(nn.Conv2d(c2, c3, 1) for _ in ch)
+        self.cv1 = nn.ModuleList(HeaderConvTinyv2(x, c1) for x in ch)
+        self.cv2 = nn.ModuleList(nn.Conv2d(c1, c2, 1) for _ in ch)
+        self.cv3 = nn.ModuleList(nn.Conv2d(c1, c3, 1) for _ in ch)
 
         self.dfl = DFL(self.reg_max) if self.reg_max > 1 else nn.Identity()
 
