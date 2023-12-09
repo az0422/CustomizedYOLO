@@ -38,7 +38,7 @@ from .custom import (Groups, GroupsF, Shortcut, ResidualBlock, ResidualBlocks, S
                      CSPXceptionBlock, CSPMobileBlock, CSPEfficientBlock, MobileBlockv2, DWResidualBlock, DWResidualBlocks, FuseResidualBlock,
                      FuseResidualBlocks, DWResidualBlock2, DWResidualBlocks2, ResNextBlock, ResNextBlocks,  ResidualBlock2, 
                      ResidualBlocks2, CSPDWResidualBlocks, CSPDWResidualBlocks2, DetectorTiny, DWResidualBlock3, DWResidualBlocks3,
-                     DetectorTinyv2, CSPDWResidualBlocks3, DetectorTinyv3, C2Tiny, C2Aug, DetectorTinyv4, C2TinyF, C2AugF
+                     DetectorTinyv2, CSPDWResidualBlocks3, DetectorTinyv3, C2Tiny, C2Aug, DetectorTinyv4, C2TinyF, C2AugF, FireModule
                       )
 
 __all__ = list(__all__) + [
@@ -48,4 +48,4 @@ __all__ = list(__all__) + [
             'CSPXceptionBlock', 'CSPMobileBlock', 'CSPEfficientBlock', 'MobileBlockv2', 'DWResidualBlock', 'DWResidualBlocks', 'FuseResidualBlock',
             'FuseResidualBlocks', 'DWResidualBlock2', 'DWResidualBlocks2', 'ResNextBlock', 'ResNextBlocks',  'ResidualBlock2', 
             'ResidualBlocks2', 'CSPDWResidualBlocks', 'CSPDWResidualBlocks2', 'DetectorTiny', 'DWResidualBlock3', 'DWResidualBlocks3',
-            'DetectorTinyv2', 'CSPDWResidualBlocks3', 'DetectorTinyv3', 'C2Tiny', 'C2Aug', 'DetectorTinyv4', 'C2TinyF', 'C2AugF']
+            'DetectorTinyv2', 'CSPDWResidualBlocks3', 'DetectorTinyv3', 'C2Tiny', 'C2Aug', 'DetectorTinyv4', 'C2TinyF', 'C2AugF', 'FireModule']

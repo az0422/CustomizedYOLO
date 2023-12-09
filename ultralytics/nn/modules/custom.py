@@ -589,6 +589,19 @@ class CSPMobileBlock(nn.Module):
         y1 = self.mobile(x2)
         return self.conv3(torch.cat([x1, y1], axis=1))
 
+class FireModule(nn.Module):
+    def __init__(self, c1, c2, expand=1):
+        super().__init__()
+        c3 = c2 // expand
+
+        self.conv1 = Conv(c1, c3, 1, 1)
+        self.conv2 = Conv(c3 // 2, c2 // 2, 1, 1)
+        self.conv3 = Conv(c3 // 2, c2 // 2, 3, 1)
+    
+    def forward(self, x):
+        x1, x2 = self.conv1(x).chunk(2, 1)
+        return x + torch.cat([self.conv2(x1), self.conv3(x2)], 1)
+
 class SPPCSP(nn.Module):
     def __init__(self, c1, c2, k=(5, 9, 13)):
         super().__init__()
