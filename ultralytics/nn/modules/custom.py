@@ -614,6 +614,18 @@ class FireC2(nn.Module):
         x1, x2 = self.conv1(x).chunk(2, 1)
         return self.conv2(torch.cat([x1, self.m(x2)], 1))
 
+class FireC3(nn.Module):
+    def __init__(self, c1, c2, n=1, expand=1):
+        super().__init__()
+        self.conv1 = Conv(c1, c2 // 2, 1, 1)
+        self.conv2 = Conv(c1, c2 // 2, 1, 1)
+        self.conv3 = Conv(c2, c2, 1, 1)
+        
+        self.m = nn.Sequential(*[FireModule(c2 // 2, c2 // 2, expand) for _ in range(n)])
+    
+    def forward(self, x):
+        return self.conv3(torch.cat([self.conv1(x), self.m(self.conv2(x))]))
+
 class SPPCSP(nn.Module):
     def __init__(self, c1, c2, k=(5, 9, 13)):
         super().__init__()
