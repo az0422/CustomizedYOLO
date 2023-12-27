@@ -944,7 +944,7 @@ class DetectorTinyv5(nn.Module):
 
         c1 = self.reg_max * 4 + self.nc
 
-        self.cv1 = nn.ModuleList(nn.Sequential(Conv(x, c1, 1, 1), Conv(c1, c1, 3, 1)) for x in ch)
+        self.cv1 = nn.ModuleList(nn.Sequential(Conv(x, c1, 1, 1), Conv(c1, c1, 3, 1, None, c1, 1), Conv(c1, c1, 3, 1, None, c1, 1)) for x in ch)
         self.cv2 = nn.ModuleList(nn.Conv2d(c1, c1, 1, groups=c1) for _ in ch)
 
         self.dfl = DFL(self.reg_max) if self.reg_max > 1 else nn.Identity()
