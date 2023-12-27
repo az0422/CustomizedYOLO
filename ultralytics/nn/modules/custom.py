@@ -925,22 +925,6 @@ class DetectorTinyv4(nn.Module):
             a.bias.data[:] = 1.0  # box
             b.bias.data[:] = math.log(5 / m.nc / (640 / s) ** 2)  # cls (.01 objects, 80 classes, 640 img)
 
-class HeaderConvTinyv3(nn.Module):
-    def __init__(self, c1, c2):
-        super().__init__()
-        
-        self.conv1 = Conv(c1, c2, 1, 1)
-        conv2 = Conv(c2, c2, 3, 1)
-        conv3 = Conv(c2, c2, 3, 1)
-        self.conv4 = Conv(c2, c2, 1, 1)
-
-        self.m = nn.Sequential(conv2, conv3)
-    
-    def forward(self, x):
-        x1 = self.conv1(x)
-
-        return self.conv4(x1 + self.m(x1))
-
 class DetectorTinyv5(nn.Module):
     """YOLOv8 Detect head for detection models."""
     dynamic = False  # force grid reconstruction
@@ -958,12 +942,10 @@ class DetectorTinyv5(nn.Module):
         self.no = nc + self.reg_max * 4  # number of outputs per anchor
         self.stride = torch.zeros(self.nl)  # strides computed during build
 
-        c1 = self.reg_max * 4 + 32
-        c2 = self.reg_max * 4  # channels
-        c3 = self.nc
+        c1 = self.reg_max * 4 + self.nc
 
-        self.cv1 = nn.ModuleList(Conv(x, c2 + c3) for x in ch)
-        self.cv2 = nn.ModuleList(nn.Conv2d(c2 + c3, c2 + c3, 1, groups=c2 + c3) for _ in ch)
+        self.cv1 = nn.ModuleList(nn.Sequential(Conv(x, c1, 1, 1), Conv(c1, c1, 3, 1)) for x in ch)
+        self.cv2 = nn.ModuleList(nn.Conv2d(c1, c1, 1, groups=c1) for _ in ch)
 
         self.dfl = DFL(self.reg_max) if self.reg_max > 1 else nn.Identity()
 
