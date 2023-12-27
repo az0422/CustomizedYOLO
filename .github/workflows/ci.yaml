@@ -45,7 +45,7 @@ jobs:
         model: [yolov5n]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip' # caching pip dependencies
@@ -100,7 +100,7 @@ jobs:
         model: [yolov8n]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip' # caching pip dependencies
@@ -116,12 +116,12 @@ jobs:
         run: |
           yolo checks
           pip list
-      #      - name: Benchmark DetectionModel
-      #        shell: bash
-      #        run: coverage run -a --source=ultralytics -m ultralytics.cfg.__init__ benchmark model='path with spaces/${{ matrix.model }}.pt' imgsz=160 verbose=0.318
-      - name: Benchmark SegmentationModel
+      - name: Benchmark DetectionModel
         shell: bash
-        run: coverage run -a --source=ultralytics -m ultralytics.cfg.__init__ benchmark model='path with spaces/${{ matrix.model }}-seg.pt' imgsz=160 verbose=0.286
+        run: coverage run -a --source=ultralytics -m ultralytics.cfg.__init__ benchmark model='path with spaces/${{ matrix.model }}.pt' imgsz=160 verbose=0.318
+      # - name: Benchmark SegmentationModel
+      #   shell: bash
+      #   run: coverage run -a --source=ultralytics -m ultralytics.cfg.__init__ benchmark model='path with spaces/${{ matrix.model }}-seg.pt' imgsz=160 verbose=0.286
       - name: Benchmark ClassificationModel
         shell: bash
         run: coverage run -a --source=ultralytics -m ultralytics.cfg.__init__ benchmark model='path with spaces/${{ matrix.model }}-cls.pt' imgsz=160 verbose=0.166
@@ -159,7 +159,7 @@ jobs:
             torch: '1.8.0'  # min torch version CI https://pypi.org/project/torchvision/
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip' # caching pip dependencies
@@ -226,7 +226,7 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: ${{ matrix.python-version }}
           mamba-version: "*"
