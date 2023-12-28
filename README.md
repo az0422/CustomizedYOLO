@@ -33,12 +33,12 @@ Same than Ultralytics YOLOv8
 #### Performance
 | Model | Parameters | GFLOPS | mAP50-95 | Recall | Precision | Speed<br>GPU|
 |-------|------------|--------|----------|--------|-----------|-----------------------|
-| YOLOv8-mobile | 6.09M | 13.2 | 42.0% | 53.6% | 67.4% | 15.8ms |
-| YOLOv8-mobile-fast | 5.76M | 12.3 | 40.1% | 51.5% | 66.9% | 10.8ms |
-| YOLOv8-mobile-tiny | 1.37M | 2.5 | 26.4% | 38.4% | 53.9% | 6.9ms |
-|-|-|-|-|-|-|-|
-| YOLOv8n | 3.15M | 8.7 | 37.1% | 47.5% | 64.2% | 8.5ms |
-| YOLOv8s | 11.2M | 28.6 | 44.7% | 56.1% | 68.3% | 9.8ms |
+| YOLOv8-mobile | 16M | 34.3 | 43.8% | 55.3% | 67.3% | 11.8ms |
+| YOLOv8-mobile-tiny | 8.8M | 19.3 | 41% | 52.4% | 52.4% | 10.2ms |
+| YOLOv8-mobile-nano | 4.2M | 10.7 | 36.5% | 48.8% | 62.6% | 6.4ms |
+||
+| YOLOv8n | 3.15M | 8.7 | 37.1% | 47.5% | 64.2% | 9.4ms |
+| YOLOv8s | 11.2M | 28.6 | 44.7% | 56.1% | 68.3% | 9.5ms |
 
 data: coco.yaml (batch 1 for inference)
 
