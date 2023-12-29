@@ -24,6 +24,8 @@ Same than Ultralytics YOLOv8
  - YOLOv8-mobile-fast.pt
  - YOLOv8-mobile-tiny.pt
 
+Train parameters: `optimizer=SGD lr0=0.01 batch=32 epochs=300 data=coco.yaml`
+
 ### Performance of models
 #### System Environment
  - CPU: Intel Xeon Silver 4216 x2
