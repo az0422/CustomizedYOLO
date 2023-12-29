@@ -31,7 +31,7 @@ Same than Ultralytics YOLOv8
  - GPU: RTX A5000 x3
 
 #### Performance
-| Model | Parameters | GFLOPS | mAP50-95 | Recall | Precision | Speed<br>GPU|
+| Model | Parameters | GFLOPs | mAP50-95 | Recall | Precision | Speed<br>GPU|
 |-------|------------|--------|----------|--------|-----------|-----------------------|
 | YOLOv8-mobile | 16M | 34.3 | 43.8% | 55.3% | 67.3% | 11.8ms |
 | YOLOv8-mobile-tiny | 8.8M | 19.3 | 41% | 52.4% | 52.4% | 10.2ms |
