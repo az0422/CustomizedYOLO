@@ -3,6 +3,7 @@ None
 import contextlib
 from copy import deepcopy
 from pathlib import Path
+import math
 
 import torch
 import torch.nn as nn
@@ -19,6 +20,8 @@ try:
     import thop
 except ImportError:
     thop = None
+
+print("%d\b " % math.gcd(1, 1), end="") # prevent import ommitting
 
 CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3, DetectorTinyv4, DetectorPrototype)
 CUSTOM_DETECTOR_STR = ('detectortiny', 'detectortinyv2', 'detectortinyv3', 'detectortinyv4', 'DetectorPrototype')
