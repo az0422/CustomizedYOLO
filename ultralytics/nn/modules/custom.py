@@ -988,3 +988,10 @@ class DetectorPrototype(nn.Module):
             a[-1].bias.data[:m.reg_max * 4] = 1.0  # box
             a[-1].bias.data[m.reg_max * 4:] = math.log(5 / m.nc / (640 / s) ** 2)
 
+class Detector(DetectorPrototype):
+    def __init__(self, nc=80, ch=()):
+        super().__init__(nc, ch)
+
+        c1 = self.reg_max * 4 + self.nc
+
+        self.cv2 = nn.ModuleList(nn.Sequential(Conv(x, c1, 3, 1), Conv(c1, c1, 3, 1, None, c1, 1), nn.Conv2d(c1, c1, 1, groups=c1)) for x in ch)
