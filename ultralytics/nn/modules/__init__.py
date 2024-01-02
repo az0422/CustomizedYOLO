@@ -39,7 +39,7 @@ from .custom import (Groups, GroupsF, Shortcut, ResidualBlock, ResidualBlocks, S
                      FuseResidualBlocks, DWResidualBlock2, DWResidualBlocks2, ResNextBlock, ResNextBlocks,  ResidualBlock2, 
                      ResidualBlocks2, CSPDWResidualBlocks, CSPDWResidualBlocks2, DetectorTiny, DWResidualBlock3, DWResidualBlocks3,
                      DetectorTinyv2, CSPDWResidualBlocks3, DetectorTinyv3, C2Tiny, C2Aug, DetectorTinyv4, C2TinyF, C2AugF, FireModule,
-                     FireC2, FireC3, DetectorPrototype, DetectorTinyv5
+                     FireC2, FireC3, DetectorPrototype, Detector
                      )
 
 __all__ = list(__all__) + [
@@ -50,4 +50,4 @@ __all__ = list(__all__) + [
             'FuseResidualBlocks', 'DWResidualBlock2', 'DWResidualBlocks2', 'ResNextBlock', 'ResNextBlocks',  'ResidualBlock2', 
             'ResidualBlocks2', 'CSPDWResidualBlocks', 'CSPDWResidualBlocks2', 'DetectorTiny', 'DWResidualBlock3', 'DWResidualBlocks3',
             'DetectorTinyv2', 'CSPDWResidualBlocks3', 'DetectorTinyv3', 'C2Tiny', 'C2Aug', 'DetectorTinyv4', 'C2TinyF', 'C2AugF', 'FireModule',
-            'FireC2', 'FireC3', 'DetectorPrototype', 'DetectorTinyv5']
+            'FireC2', 'FireC3', 'DetectorPrototype', 'Detector']
