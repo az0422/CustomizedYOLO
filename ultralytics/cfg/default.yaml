@@ -61,6 +61,7 @@ augment: False  # (bool) apply image augmentation to prediction sources
 agnostic_nms: False  # (bool) class-agnostic NMS
 classes:  # (int | list[int], optional) filter results by class, i.e. classes=0, or classes=[0,2,3]
 retina_masks: False  # (bool) use high-resolution segmentation masks
+embed:  # (list[int], optional) return feature vectors/embeddings from given layers
 
 # Visualize settings ---------------------------------------------------------------------------------------------------
 show: False  # (bool) show predicted images and videos if environment allows
@@ -112,6 +113,9 @@ fliplr: 0.5  # (float) image flip left-right (probability)
 mosaic: 1.0  # (float) image mosaic (probability)
 mixup: 0.0  # (float) image mixup (probability)
 copy_paste: 0.0  # (float) segment copy-paste (probability)
+auto_augment: randaugment  # (str) auto augmentation policy for classification (randaugment, autoaugment, augmix)
+erasing: 0.4  # (float) probability of random erasing during classification training (0-1)
+crop_fraction: 1.0  # (float) image crop fraction for classification evaluation/inference (0-1)
 
 # Custom config.yaml ---------------------------------------------------------------------------------------------------
 cfg:  # (str, optional) for overriding defaults.yaml
