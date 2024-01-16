@@ -4,11 +4,11 @@ This project is YOLOv8 project for mobile system.
 We will develop and study for lightweight YOLO model.
 
 ## How to install
+```
 git clone https://github.com/az0422/customizedYOLO.git
-
 cd customizedYOLO
-
 pip install .
+```
 
 ## How to use
 Same than Ultralytics YOLOv8
