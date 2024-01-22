@@ -760,6 +760,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             DWConvTranspose2d,
             C3x,
             RepC3,
+            RepConv,
         ):
             c1, c2 = ch[f], args[0]
             if type(c2) is str:
