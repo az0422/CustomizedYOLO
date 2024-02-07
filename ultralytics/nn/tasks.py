@@ -811,7 +811,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             
         elif m in (EfficientBlock, SPPCSP, SPPFCSP, SPPFCSPF, ResidualBlocks, ResidualBlock,
                    PoolResidualBlock, PoolResidualBlocks, MobileBlock, SEResidualBlock,
-                   SEResidualBlocks,  SEResidualBlocks2, XceptionBlock,
+                   SEResidualBlocks,  XceptionBlock,
                    CSPResidualBlocks, CSPInceptionBlock, CSPXceptionBlock, CSPMobileBlock,
                    CSPEfficientBlock, MobileBlockv2, DWResidualBlock, DWResidualBlocks,
                    FuseResidualBlock, FuseResidualBlocks, DWResidualBlock2, DWResidualBlocks2,
@@ -822,7 +822,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             args = [c1, c2, *args[1:]]
             
             if m in (ResidualBlocks, PoolResidualBlocks, SEResidualBlocks, ResidualBlocks2,
-                     SEResidualBlocks2, CSPResidualBlocks, DWResidualBlocks, FuseResidualBlocks,
+                     CSPResidualBlocks, DWResidualBlocks, FuseResidualBlocks,
                      DWResidualBlocks2, ResNextBlocks, CSPDWResidualBlocks, CSPDWResidualBlocks2,
                      DWResidualBlocks3, CSPDWResidualBlocks3, C2Tiny, C2Aug, C2TinyF, C2AugF, FireC2, FireC3):
                 args.insert(2, n)

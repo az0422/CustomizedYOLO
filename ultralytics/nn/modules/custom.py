@@ -46,25 +46,6 @@ class Bagging(nn.Module):
             result = result + xx
         
         return result
-    
-    
-class BottleneckCSP2(nn.Module):
-    # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
-    def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
-        super(BottleneckCSP2, self).__init__()
-        c_ = int(c2)  # hidden channels
-        self.cv1 = Conv(c1, c_, 1, 1)
-        self.cv2 = nn.Conv2d(c_, c_, 1, 1, bias=False)
-        self.cv3 = Conv(2 * c_, c2, 1, 1)
-        self.bn = nn.BatchNorm2d(2 * c_) 
-        self.act = nn.SiLU()
-        self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)])
-
-    def forward(self, x):
-        x1 = self.cv1(x)
-        y1 = self.m(x1)
-        y2 = self.cv2(x1)
-        return self.cv3(self.act(self.bn(torch.cat((y1, y2), dim=1))))
 
 class ResidualBlock(nn.Module):
     def __init__(self, c1, c2, ratio=1):
@@ -83,7 +64,7 @@ class ResidualBlock(nn.Module):
 class ResidualBlocks(nn.Module):
     def __init__(self, c1, c2, n=1, ratio=1):
         super().__init__()
-        self.m = nn.Sequential(*[ResidualBlock(c1, c2, ratio) for _ in range(n)])
+        self.m = nn.Sequential(*([ResidualBlock(c1, c2, ratio) for _ in range(n)] + [Conv(c2, c2, 1, 1)]))
 
     def forward(self, x):
         return self.m(x)
@@ -107,7 +88,7 @@ class ResidualBlock2(nn.Module):
 class ResidualBlocks2(nn.Module):
     def __init__(self, c1, c2, n=1, ratio=1):
         super().__init__()
-        self.m = nn.Sequential(*[ResidualBlock2(c1, c2, ratio) for _ in range(n)])
+        self.m = nn.Sequential(*([ResidualBlock2(c1, c2, ratio) for _ in range(n)] + [Conv(c2, c2, 1, 1)]))
     
     def forward(self, x):
         return self.m(x)
@@ -147,7 +128,7 @@ class FuseResidualBlock(nn.Module):
 class FuseResidualBlocks(nn.Module):
     def __init__(self, c1, c2, n=1, e=1.0):
         super().__init__()
-        self.m = nn.Sequential(*[FuseResidualBlock(c1, c2, e) for _ in range(n)])
+        self.m = nn.Sequential(*([FuseResidualBlock(c1, c2, e) for _ in range(n)] + [Conv(c2, c2, 1, 1)]))
 
     def forward(self, x):
         return self.m(x)
@@ -186,17 +167,7 @@ class SEResidualBlock(nn.Module):
 class SEResidualBlocks(nn.Module):
     def __init__(self, c1, c2, n=1, ratio=16):
         super().__init__()
-        self.m = nn.Sequential(*[SEResidualBlock(c1, c2, ratio) for _ in range(n)])
-    
-    def forward(self, x):
-        return self.m(x)
-
-class SEResidualBlocks2(nn.Module):
-    def __init__(self, c1, c2, n=1, ratio=16):
-        super().__init__()
-        res = [SEResidualBlock(c1, c2, ratio) for _ in range(n)]
-        res.append(Conv(c1, c2, 1, 1, None, 1, 1))
-        self.m = nn.Sequential(*res)
+        self.m = nn.Sequential(*([SEResidualBlock(c1, c2, ratio) for _ in range(n)] + [Conv(c2, c2, 1, 1)]))
     
     def forward(self, x):
         return self.m(x)
@@ -215,7 +186,7 @@ class PoolResidualBlock(nn.Module):
 class PoolResidualBlocks(nn.Module):
     def __init__(self, c1, c2, n=1, pool_kernel=5):
         super().__init__()
-        self.m = nn.Sequential(*[PoolResidualBlock(c1, c2, pool_kernel) for _ in range(n)])
+        self.m = nn.Sequential(*([PoolResidualBlock(c1, c2, pool_kernel) for _ in range(n)] + [Conv(c2, c2, 1, 1)]))
 
     def forward(self, x):
         return self.m(x)
@@ -233,7 +204,7 @@ class DWResidualBlocks(nn.Module):
     def __init__(self, c1, c2, n=1, dwratio=1):
         super().__init__()
         
-        self.m = nn.Sequential(*[DWResidualBlock(c1, c2, dwratio) for _ in range(n)])
+        self.m = nn.Sequential(*([DWResidualBlock(c1, c2, dwratio) for _ in range(n)] + [Conv(c2, c2, 1, 1)]))
     
     def forward(self, x):
         return self.m(x)
@@ -272,7 +243,7 @@ class DWResidualBlock2(nn.Module):
 class DWResidualBlocks2(nn.Module):
     def __init__(self, c1, c2, n=1, dwratio=1, btratio=1):
         super().__init__()
-        self.m = nn.Sequential(*[DWResidualBlock2(c1, c2, dwratio, btratio) for _ in range(n)])
+        self.m = nn.Sequential(*([DWResidualBlock2(c1, c2, dwratio, btratio) for _ in range(n)] + [Conv(c2, c2, 1, 1)]))
     
     def forward(self, x):
         return self.m(x)
@@ -312,7 +283,7 @@ class DWResidualBlocks3(nn.Module):
     def __init__(self, c1, c2, n=1, dwratio=1, btratio=1):
         super().__init__()
 
-        self.m = nn.Sequential(*[DWResidualBlock3(c1, c2, dwratio, btratio) for _ in range(n)])
+        self.m = nn.Sequential(*([DWResidualBlock3(c1, c2, dwratio, btratio) for _ in range(n)] + [Conv(c2, c2, 1, 1)]))
     
     def forward(self, x):
         return self.m(x)
@@ -438,7 +409,7 @@ class ResNextBlock(nn.Module):
 class ResNextBlocks(nn.Module):
     def __init__(self, c1, c2, n=1, expand=1.0, dwratio=1):
         super().__init__()
-        self.m = nn.Sequential(*[ResNextBlock(c1, c2, expand, dwratio) for _ in range(n)])
+        self.m = nn.Sequential(*([ResNextBlock(c1, c2, expand, dwratio) for _ in range(n)] + [Conv(c2, c2, 1, 1)]))
     
     def forward(self, x):
         return self.m(x)
