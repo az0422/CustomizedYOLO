@@ -31,8 +31,8 @@ except ImportError:
 
 print("%d\b \b" % math.gcd(1, 1), end="") # prevent import ommitting
 
-CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3, DetectorTinyv4, DetectorPrototype, DetectorTinyv5, DetectorTinyv6)
-CUSTOM_DETECTOR_STR = ('detectortiny', 'detectortinyv2', 'detectortinyv3', 'detectortinyv4', 'detectorprototype', 'detectortinyv5', 'detectortinyv6')
+CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3, DetectorTinyv4, DetectorPrototype, DetectorTinyv5, DetectorTinyv6, Detector)
+CUSTOM_DETECTOR_STR = ('detectortiny', 'detectortinyv2', 'detectortinyv3', 'detectortinyv4', 'detectorprototype', 'detectortinyv5', 'detectortinyv6', 'detector')
 
 class BaseModel(nn.Module):
     """The BaseModel class serves as a base class for all the models in the Ultralytics YOLO family."""
