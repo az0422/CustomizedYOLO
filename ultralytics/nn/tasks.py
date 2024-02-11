@@ -818,7 +818,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                    ResNextBlock, ResNextBlocks, ResidualBlock2, ResidualBlocks2, CSPDWResidualBlocks,
                    CSPDWResidualBlocks2, DWResidualBlocks3, DWResidualBlock3, CSPDWResidualBlocks3,
                    C2Tiny, C2Aug, C2TinyF, C2AugF, FireModule, FireC2, FireC3, ResidualBlock3, 
-                   ResidualBlocks3):
+                   ResidualBlocks3, EfficientBlocks):
             c1, c2 = ch[f], make_divisible(min(args[0], max_channels) * width, 8)
             args = [c1, c2, *args[1:]]
             
@@ -826,7 +826,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                      CSPResidualBlocks, DWResidualBlocks, FuseResidualBlocks,
                      DWResidualBlocks2, ResNextBlocks, CSPDWResidualBlocks, CSPDWResidualBlocks2,
                      DWResidualBlocks3, CSPDWResidualBlocks3, C2Tiny, C2Aug, C2TinyF, C2AugF, FireC2, FireC3,
-                     ResidualBlocks3):
+                     ResidualBlocks3, EfficientBlocks):
                 args.insert(2, n)
                 n = 1
         else:

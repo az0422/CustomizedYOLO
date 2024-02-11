@@ -449,6 +449,15 @@ class EfficientBlock(nn.Module):
             return x + y
         return y
 
+class EfficientBlocks(nn.Module):
+    def __init__(self, c1, c2, n=1, expand=6, ratio=16):
+        super().__init__()
+        
+        self.m = nn.Sequential(*([EfficientBlock(c1, c2, expand, ratio) for _ in range(n)] + [Conv(c2, c2, 1, 1)]))
+    
+    def forward(self, x):
+        return self.m(x)
+
 class CSPEfficientBlock(nn.Module):
     def __init__(self, c1, c2, expand=6, ratio=16):
         super().__init__()
