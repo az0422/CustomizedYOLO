@@ -1052,7 +1052,7 @@ class Detector(nn.Module):
         self.no = nc + self.reg_max * 4  # number of outputs per anchor
         self.stride = torch.zeros(self.nl)  # strides computed during build
 
-        c1 = self.reg_max * 4 + 32
+        c1 = self.reg_max * 4 * 2
         c2 = self.reg_max * 4  # channels
         c3 = self.nc
 
