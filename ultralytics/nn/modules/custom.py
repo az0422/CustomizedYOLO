@@ -1056,7 +1056,7 @@ class Detector(nn.Module):
         c2 = self.reg_max * 4  # channels
         c3 = self.nc
 
-        self.cv1 = nn.ModuleList(nn.Sequential(Conv(x, c1, 1 if x > c1 else 3, 1), Conv(c1, c1, 3, 1)) for x in ch)
+        self.cv1 = nn.ModuleList(nn.Sequential(Conv(x, c1, 1 if x >= c1 else 3, 1), Conv(c1, c1, 3, 1)) for x in ch)
         self.cv2 = nn.ModuleList(nn.Sequential(Conv(c1, c2, 1, 1), Conv(c2, c2, 3, 1), nn.Conv2d(c2, c2, 1)) for _ in ch)
         self.cv3 = nn.ModuleList(nn.Sequential(Conv(c1, c3, 1, 1), Conv(c3, c3, 3, 1), nn.Conv2d(c3, c3, 1)) for _ in ch)
 
