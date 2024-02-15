@@ -786,6 +786,10 @@ class DetectorTinyv2(nn.Module):
         for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
             a.bias.data[:] = 1.0  # box
             b.bias.data[:] = math.log(5 / m.nc / (640 / s) ** 2)  # cls (.01 objects, 80 classes, 640 img)
+    
+    def decode_bboxes(self, bboxes, anchors):
+        """Decode bounding boxes."""
+        return dist2bbox(bboxes, anchors, xywh=True, dim=1)
 
 class DetectorTinyv3(nn.Module):
     """YOLOv8 Detect head for detection models."""
@@ -853,6 +857,10 @@ class DetectorTinyv3(nn.Module):
         for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
             a.bias.data[:] = 1.0  # box
             b.bias.data[:] = math.log(5 / m.nc / (640 / s) ** 2)  # cls (.01 objects, 80 classes, 640 img)
+    
+    def decode_bboxes(self, bboxes, anchors):
+        """Decode bounding boxes."""
+        return dist2bbox(bboxes, anchors, xywh=True, dim=1)
 
 class DetectorTinyv4(nn.Module):
     """YOLOv8 Detect head for detection models."""
@@ -922,6 +930,10 @@ class DetectorTinyv4(nn.Module):
             a.bias.data[:] = 1.0  # box
             b.bias.data[:] = math.log(5 / m.nc / (640 / s) ** 2)  # cls (.01 objects, 80 classes, 640 img)
 
+    def decode_bboxes(self, bboxes, anchors):
+        """Decode bounding boxes."""
+        return dist2bbox(bboxes, anchors, xywh=True, dim=1)
+
 class DetectorPrototype(nn.Module):
     """YOLOv8 Detect head for detection models."""
     dynamic = False  # force grid reconstruction
@@ -984,6 +996,10 @@ class DetectorPrototype(nn.Module):
         for a, s in zip(m.cv2, m.stride):  # from
             a[-1].bias.data[:m.reg_max * 4] = 1.0  # box
             a[-1].bias.data[m.reg_max * 4:] = math.log(5 / m.nc / (640 / s) ** 2)
+    
+    def decode_bboxes(self, bboxes, anchors):
+        """Decode bounding boxes."""
+        return dist2bbox(bboxes, anchors, xywh=True, dim=1)
 
 class DetectorTinyv5(DetectorTinyv4):
     """YOLOv8 Detect head for detection models."""
@@ -1102,6 +1118,10 @@ class Detector(nn.Module):
         for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
             a[-1].bias.data[:] = 1.0  # box
             b[-1].bias.data[:] = math.log(5 / m.nc / (640 / s) ** 2)  # cls (.01 objects, 80 classes, 640 img)
+    
+    def decode_bboxes(self, bboxes, anchors):
+        """Decode bounding boxes."""
+        return dist2bbox(bboxes, anchors, xywh=True, dim=1)
 
 class DetectorPrototype2(nn.Module):
     """YOLOv8 Detect head for detection models."""
@@ -1168,3 +1188,7 @@ class DetectorPrototype2(nn.Module):
         for a, b, s in zip(m.cv2, m.cv3, m.stride):  # from
             a.bias.data[:] = 1.0  # box
             b.bias.data[:] = math.log(5 / m.nc / (640 / s) ** 2)  # cls (.01 objects, 80 classes, 640 img)
+    
+    def decode_bboxes(self, bboxes, anchors):
+        """Decode bounding boxes."""
+        return dist2bbox(bboxes, anchors, xywh=True, dim=1)
