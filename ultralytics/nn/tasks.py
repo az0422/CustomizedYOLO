@@ -31,8 +31,8 @@ except ImportError:
 
 print("%d\b \b" % math.gcd(1, 1), end="") # prevent import ommitting
 
-CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3, DetectorTinyv4, DetectorPrototype, DetectorTinyv5, DetectorTinyv6, Detector)
-CUSTOM_DETECTOR_STR = ('detectortiny', 'detectortinyv2', 'detectortinyv3', 'detectortinyv4', 'detectorprototype', 'detectortinyv5', 'detectortinyv6', 'detector')
+CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3, DetectorTinyv4, DetectorPrototype, DetectorTinyv5, DetectorTinyv6, Detector, DetectorPrototype2)
+CUSTOM_DETECTOR_STR = ('detectortiny', 'detectortinyv2', 'detectortinyv3', 'detectortinyv4', 'detectorprototype', 'detectortinyv5', 'detectortinyv6', 'detector', 'detectorprototype2')
 
 class BaseModel(nn.Module):
     """The BaseModel class serves as a base class for all the models in the Ultralytics YOLO family."""
@@ -730,7 +730,6 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         Conv.default_act = eval(act)  # redefine default activation, i.e. Conv.default_act = nn.SiLU()
         if verbose:
             LOGGER.info(f"{colorstr('activation:')} {act}")  # print
-
     if verbose:
         LOGGER.info(f"\n{'':>3}{'from':>20}{'n':>3}{'params':>10}  {'module':<45}{'arguments':<30}")
     ch = [ch]
@@ -773,7 +772,10 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         ):
             c1, c2 = ch[f], args[0]
             if type(c2) is str:
-                c2 = make_divisible(min(eval(c2), max_channels) * width, 8)
+                if c2.startswith("^"):
+                    c2 = eval(c2[1:])
+                else:
+                    c2 = make_divisible(min(eval(c2), max_channels) * width, 8)
             elif c2 != nc:  # if c2 not equal to number of classes (i.e. for Classify() output)
                 c2 = make_divisible(min(c2, max_channels) * width, 8)
 
@@ -852,6 +854,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         if i == 0:
             ch = []
         ch.append(c2)
+
+
     return nn.Sequential(*layers), sorted(save)
 
 
