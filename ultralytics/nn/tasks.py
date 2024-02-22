@@ -815,12 +815,12 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
 
         if type(n) is str:
             if n.startswith("^"):
-                n = n_ = eval(n)
+                n = n_ = eval(n[1:])
             else:
                 n = n_ = max(round(eval(n) * depth), 1) if n > 1 else n
         else:
             n = n_ = max(round(n * depth), 1) if n > 1 else n
-            
+
         if m in (
             Classify,
             Conv,
