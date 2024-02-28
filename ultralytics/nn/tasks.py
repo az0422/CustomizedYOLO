@@ -672,8 +672,10 @@ def torch_safe_load(weight):
 
     file = None
     
-    if str(weight).startswith("yolov8-mobile"):
+    if str(weight).find("yolov8-mobile") + 1:
         file = attempt_download_asset(weight, repo="az0422/yolov8-mobile-weights", release="v0.03")
+    elif str(weight).find("yolov8nd") + 1:
+        file = attempt_download_asset(weight, repo="az0422/yolov8-mobile-weights", release="nd-v0.01")
     else:
         file = attempt_download_asset(weight)  # search online if missing locally
     
@@ -960,7 +962,7 @@ def yaml_model_load(path):
         LOGGER.warning(f"WARNING ⚠️ Ultralytics YOLO P6 models now use -p6 suffix. Renaming {path.stem} to {new_stem}.")
         path = path.with_name(new_stem + path.suffix)
 
-    unified_path = re.sub(r"(\d+)([nslmx])(.+)?$", r"\1\3", str(path))  # i.e. yolov8x.yaml -> yolov8.yaml
+    unified_path = re.sub(r"(\d+)(nd)?([nslmx])(.+)?$", r"\1\2\4", str(path))  # i.e. yolov8x.yaml -> yolov8.yaml
     yaml_file = check_yaml(unified_path, hard=False) or check_yaml(path)
     d = yaml_load(yaml_file)  # model dict
     d["scale"] = guess_model_scale(path)
@@ -983,7 +985,7 @@ def guess_model_scale(model_path):
     with contextlib.suppress(AttributeError):
         import re
 
-        return re.search(r"yolov\d+([nslmx])", Path(model_path).stem).group(1)  # n, s, m, l, or x
+        return re.search(r"yolov\d+(nd)?([nslmx])", Path(model_path).stem).group(2)  # n, s, m, l, or x
     return ""
 
 
