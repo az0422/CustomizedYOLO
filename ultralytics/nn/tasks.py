@@ -543,7 +543,7 @@ class WorldModel(DetectionModel):
         text_token = clip.tokenize(text).to(device)
         txt_feats = model.encode_text(text_token).to(dtype=torch.float32)
         txt_feats = txt_feats / txt_feats.norm(p=2, dim=-1, keepdim=True)
-        self.txt_feats = txt_feats.reshape(-1, len(text), txt_feats.shape[-1])
+        self.txt_feats = txt_feats.reshape(-1, len(text), txt_feats.shape[-1]).detach()
         self.model[-1].nc = len(text)
 
     def init_criterion(self):
@@ -743,6 +743,8 @@ def attempt_load_weights(weights, device=None, inplace=True, fuse=False):
     for m in ensemble.modules():
         if hasattr(m, "inplace"):
             m.inplace = inplace
+        elif isinstance(m, nn.Upsample) and not hasattr(m, "recompute_scale_factor"):
+            m.recompute_scale_factor = None  # torch 1.11.0 compatibility
 
     # Return model
     if len(ensemble) == 1:
@@ -776,6 +778,8 @@ def attempt_load_one_weight(weight, device=None, inplace=True, fuse=False):
     for m in model.modules():
         if hasattr(m, "inplace"):
             m.inplace = inplace
+        elif isinstance(m, nn.Upsample) and not hasattr(m, "recompute_scale_factor"):
+            m.recompute_scale_factor = None  # torch 1.11.0 compatibility
 
     # Return model and ckpt
     return model, ckpt
@@ -838,6 +842,9 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C1,
             C2,
             C2f,
+            RepNCSPELAN4,
+            ADown,
+            SPPELAN,
             C2fAttn,
             C3,
             C3TR,
@@ -887,7 +894,6 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
         elif m is RTDETRDecoder:  # special case, channels arg must be passed in index 1
             args.insert(1, [ch[x] for x in f])
-        
         elif m in (Shortcut, Bagging):
             c2 = ch[f[0]]
 
@@ -933,6 +939,12 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                      ResidualBlocks3, EfficientBlocks):
                 args.insert(2, n)
                 n = 1
+        elif m is CBLinear:
+            c2 = args[0]
+            c1 = ch[f]
+            args = [c1, c2, *args[1:]]
+        elif m is CBFuse:
+            c2 = ch[f[-1]]
         else:
             c2 = ch[f]
 
