@@ -32,8 +32,8 @@ except ImportError:
 
 print("%d\b \b" % math.gcd(1, 1), end="") # prevent import ommitting
 
-CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3, DetectorTinyv4, DetectorPrototype, DetectorTinyv5, DetectorTinyv6, Detector, DetectorPrototype2)
-CUSTOM_DETECTOR_STR = ('detectortiny', 'detectortinyv2', 'detectortinyv3', 'detectortinyv4', 'detectorprototype', 'detectortinyv5', 'detectortinyv6', 'detector', 'detectorprototype2')
+CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3, DetectorTinyv4, DetectorPrototype, DetectorTinyv5, DetectorTinyv6, DetectorPrototype2)
+CUSTOM_DETECTOR_STR = ('detectortiny', 'detectortinyv2', 'detectortinyv3', 'detectortinyv4', 'detectorprototype', 'detectortinyv5', 'detectortinyv6', 'detectorprototype2')
 
 class BaseModel(nn.Module):
     """The BaseModel class serves as a base class for all the models in the Ultralytics YOLO family."""
@@ -155,6 +155,8 @@ class BaseModel(nn.Module):
                 if isinstance(m, RepConv):
                     m.fuse_convs()
                     m.forward = m.forward_fuse  # update forward
+                if isinstance(m, AuxiliaryShortcut):
+                    m.forward = m.forward_fuse
             self.info(verbose=verbose)
 
         return self
@@ -894,7 +896,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
         elif m is RTDETRDecoder:  # special case, channels arg must be passed in index 1
             args.insert(1, [ch[x] for x in f])
-        elif m in (Shortcut, Bagging):
+        elif m in (Shortcut, Bagging, AuxiliaryShortcut):
             c2 = ch[f[0]]
 
         elif m in (Groups, GroupsF):
