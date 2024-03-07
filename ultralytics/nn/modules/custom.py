@@ -1141,7 +1141,7 @@ class DetectorPrototype3(nn.Module):
     anchors = torch.empty(0)  # init
     strides = torch.empty(0)  # init
 
-    def __init__(self, nc=80, ch=()):
+    def __init__(self, nc=80, k=3, ch=()):
         """Initializes the YOLOv8 detection layer with specified number of classes and channels."""
         super().__init__()
         self.nc = nc  # number of classes
@@ -1152,7 +1152,7 @@ class DetectorPrototype3(nn.Module):
 
         self.filter = []
 
-        self.cv1 = nn.ModuleList(nn.Conv2d(x, self.reg_max * 4 + nc, 3, 1, padding=1) for x in ch)
+        self.cv1 = nn.ModuleList(nn.Conv2d(x, self.reg_max * 4 + nc, k, 1, padding=k // 2) for x in ch)
 
         self.dfl = DFL(self.reg_max) if self.reg_max > 1 else nn.Identity()
 
