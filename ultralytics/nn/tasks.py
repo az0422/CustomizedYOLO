@@ -32,8 +32,10 @@ except ImportError:
 
 print("%d\b \b" % math.gcd(1, 1), end="") # prevent import ommitting
 
-CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3, DetectorTinyv4, DetectorPrototype, DetectorTinyv5, DetectorTinyv6, DetectorPrototype2, DetectorPrototype3)
-CUSTOM_DETECTOR_STR = ('detectortiny', 'detectortinyv2', 'detectortinyv3', 'detectortinyv4', 'detectorprototype', 'detectortinyv5', 'detectortinyv6', 'detectorprototype2', 'detectorprototype3')
+CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3, DetectorTinyv4, DetectorPrototype, DetectorTinyv5, DetectorTinyv6, DetectorPrototype2, DetectorPrototype3,
+                   DetectorPrototype4)
+CUSTOM_DETECTOR_STR = ('detectortiny', 'detectortinyv2', 'detectortinyv3', 'detectortinyv4', 'detectorprototype', 'detectortinyv5', 'detectortinyv6', 'detectorprototype2', 
+                       'detectorprototype3', 'detectorprototype4')
 
 class BaseModel(nn.Module):
     """The BaseModel class serves as a base class for all the models in the Ultralytics YOLO family."""
@@ -856,6 +858,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C3x,
             RepC3,
             RepConv,
+            nn.Conv2d
         ):
             c1, c2 = ch[f], args[0]
             if type(c2) is str:
