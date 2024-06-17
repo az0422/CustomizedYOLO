@@ -50,6 +50,7 @@ from .block import (
     CBLinear,
     Silence,
     RepBottleneck,
+    ResNetLayer,
 )
 from .conv import (
     CBAM,
@@ -139,7 +140,8 @@ __all__ = (
     "CBFuse",
     "CBLinear",
     "Silence",
-    "RepBottleneck"
+    "RepBottleneck",
+    "ResNetLayer",
 )
 
 from .custom import (Groups, GroupsF, Shortcut, ResidualBlock, ResidualBlocks, SEBlock, EfficientBlock, PoolResidualBlock,
