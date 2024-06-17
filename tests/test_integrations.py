@@ -1,18 +1,17 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
 import contextlib
+import os
+import subprocess
+import time
 from pathlib import Path
 
 import pytest
 
+from tests import MODEL, SOURCE, TMP
 from ultralytics import YOLO, download
-from ultralytics.utils import ASSETS, DATASETS_DIR, ROOT, SETTINGS, WEIGHTS_DIR
+from ultralytics.utils import DATASETS_DIR, SETTINGS
 from ultralytics.utils.checks import check_requirements
-
-MODEL = WEIGHTS_DIR / "path with spaces" / "yolov8n.pt"  # test spaces in path
-CFG = "yolov8n.yaml"
-SOURCE = ASSETS / "bus.jpg"
-TMP = (ROOT / "../tests/tmp").resolve()  # temp directory for test files
 
 
 @pytest.mark.skipif(not check_requirements("ray", install=False), reason="ray[tune] not installed")
@@ -30,13 +29,41 @@ def test_mlflow():
     YOLO("yolov8n-cls.yaml").train(data="imagenet10", imgsz=32, epochs=3, plots=False, device="cpu")
 
 
+@pytest.mark.skipif(True, reason="Test failing in scheduled CI https://github.com/ultralytics/ultralytics/pull/8868")
+@pytest.mark.skipif(not check_requirements("mlflow", install=False), reason="mlflow not installed")
+def test_mlflow_keep_run_active():
+    import mlflow
+
+    """Test training with MLflow tracking enabled."""
+    SETTINGS["mlflow"] = True
+    run_name = "Test Run"
+    os.environ["MLFLOW_RUN"] = run_name
+
+    # Test with MLFLOW_KEEP_RUN_ACTIVE=True
+    os.environ["MLFLOW_KEEP_RUN_ACTIVE"] = "True"
+    YOLO("yolov8n-cls.yaml").train(data="imagenet10", imgsz=32, epochs=1, plots=False, device="cpu")
+    status = mlflow.active_run().info.status
+    assert status == "RUNNING", "MLflow run should be active when MLFLOW_KEEP_RUN_ACTIVE=True"
+
+    run_id = mlflow.active_run().info.run_id
+
+    # Test with MLFLOW_KEEP_RUN_ACTIVE=False
+    os.environ["MLFLOW_KEEP_RUN_ACTIVE"] = "False"
+    YOLO("yolov8n-cls.yaml").train(data="imagenet10", imgsz=32, epochs=1, plots=False, device="cpu")
+    status = mlflow.get_run(run_id=run_id).info.status
+    assert status == "FINISHED", "MLflow run should be ended when MLFLOW_KEEP_RUN_ACTIVE=False"
+
+    # Test with MLFLOW_KEEP_RUN_ACTIVE not set
+    os.environ.pop("MLFLOW_KEEP_RUN_ACTIVE", None)
+    YOLO("yolov8n-cls.yaml").train(data="imagenet10", imgsz=32, epochs=1, plots=False, device="cpu")
+    status = mlflow.get_run(run_id=run_id).info.status
+    assert status == "FINISHED", "MLflow run should be ended by default when MLFLOW_KEEP_RUN_ACTIVE is not set"
+
+
 @pytest.mark.skipif(not check_requirements("tritonclient", install=False), reason="tritonclient[all] not installed")
 def test_triton():
     """Test NVIDIA Triton Server functionalities."""
     check_requirements("tritonclient[all]")
-    import subprocess
-    import time
-
     from tritonclient.http import InferenceServerClient  # noqa
 
     # Create variables
@@ -93,7 +120,7 @@ def test_pycocotools():
     from ultralytics.models.yolo.segment import SegmentationValidator
 
     # Download annotations after each dataset downloads first
-    url = "https://github.com/ultralytics/assets/releases/download/v8.1.0/"
+    url = "https://github.com/ultralytics/assets/releases/download/v8.2.0/"
 
     args = {"model": "yolov8n.pt", "data": "coco8.yaml", "save_json": True, "imgsz": 64}
     validator = DetectionValidator(args=args)

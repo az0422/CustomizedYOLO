@@ -123,7 +123,7 @@ class BaseModel(nn.Module):
             None
         """
         c = m == self.model[-1] and isinstance(x, list)  # is final layer list, copy input as inplace fix
-        flops = thop.profile(m, inputs=[x.copy() if c else x], verbose=False)[0] / 1e9 * 2 if thop else 0  # FLOPs
+        flops = thop.profile(m, inputs=[x.copy() if c else x], verbose=False)[0] / 1e9 * 2 if thop else 0  # GFLOPs
         t = time_sync()
         for _ in range(10):
             m(x.copy() if c else x)
@@ -267,8 +267,12 @@ class DetectionModel(BaseModel):
 
             s = 256  # 2x min stride
             m.inplace = self.inplace
-            forward = lambda x: self.forward(x)[0] if isinstance(m, (Segment, Pose, OBB)) else self.forward(x)
-            m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])  # forward
+
+            def _forward(x):
+                """Performs a forward pass through the model, handling different Detect subclass types accordingly."""
+                return self.forward(x)[0] if isinstance(m, (Segment, Pose, OBB)) else self.forward(x)
+
+            m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch, s, s))])  # forward
             self.stride = m.stride
             m.bias_init()  # only run once
         else:
@@ -418,11 +422,11 @@ class ClassificationModel(BaseModel):
         elif isinstance(m, nn.Sequential):
             types = [type(x) for x in m]
             if nn.Linear in types:
-                i = types.index(nn.Linear)  # nn.Linear index
+                i = len(types) - 1 - types[::-1].index(nn.Linear)  # last nn.Linear index
                 if m[i].out_features != nc:
                     m[i] = nn.Linear(m[i].in_features, nc)
             elif nn.Conv2d in types:
-                i = types.index(nn.Conv2d)  # nn.Conv2d index
+                i = len(types) - 1 - types[::-1].index(nn.Conv2d)  # last nn.Conv2d index
                 if m[i].out_channels != nc:
                     m[i] = nn.Conv2d(m[i].in_channels, nc, m[i].kernel_size, m[i].stride, bias=m[i].bias is not None)
 
@@ -553,30 +557,32 @@ class WorldModel(DetectionModel):
 
     def __init__(self, cfg="yolov8s-world.yaml", ch=3, nc=None, verbose=True):
         """Initialize YOLOv8 world model with given config and parameters."""
-        self.txt_feats = torch.randn(1, nc or 80, 512)  # placeholder
+        self.txt_feats = torch.randn(1, nc or 80, 512)  # features placeholder
+        self.clip_model = None  # CLIP model placeholder
         super().__init__(cfg=cfg, ch=ch, nc=nc, verbose=verbose)
 
-    def set_classes(self, text):
-        """Perform a forward pass with optional profiling, visualization, and embedding extraction."""
+    def set_classes(self, text, batch=80, cache_clip_model=True):
+        """Set classes in advance so that model could do offline-inference without clip model."""
         try:
             import clip
         except ImportError:
-            check_requirements("git+https://github.com/openai/CLIP.git")
+            check_requirements("git+https://github.com/ultralytics/CLIP.git")
             import clip
 
-        model, _ = clip.load("ViT-B/32")
+        if (
+            not getattr(self, "clip_model", None) and cache_clip_model
+        ):  # for backwards compatibility of models lacking clip_model attribute
+            self.clip_model = clip.load("ViT-B/32")[0]
+        model = self.clip_model if cache_clip_model else clip.load("ViT-B/32")[0]
         device = next(model.parameters()).device
         text_token = clip.tokenize(text).to(device)
-        txt_feats = model.encode_text(text_token).to(dtype=torch.float32)
+        txt_feats = [model.encode_text(token).detach() for token in text_token.split(batch)]
+        txt_feats = txt_feats[0] if len(txt_feats) == 1 else torch.cat(txt_feats, dim=0)
         txt_feats = txt_feats / txt_feats.norm(p=2, dim=-1, keepdim=True)
-        self.txt_feats = txt_feats.reshape(-1, len(text), txt_feats.shape[-1]).detach()
+        self.txt_feats = txt_feats.reshape(-1, len(text), txt_feats.shape[-1])
         self.model[-1].nc = len(text)
 
-    def init_criterion(self):
-        """Initialize the loss criterion for the model."""
-        raise NotImplementedError
-
-    def predict(self, x, profile=False, visualize=False, augment=False, embed=None):
+    def predict(self, x, profile=False, visualize=False, txt_feats=None, augment=False, embed=None):
         """
         Perform a forward pass through the model.
 
@@ -584,13 +590,14 @@ class WorldModel(DetectionModel):
             x (torch.Tensor): The input tensor.
             profile (bool, optional): If True, profile the computation time for each layer. Defaults to False.
             visualize (bool, optional): If True, save feature maps for visualization. Defaults to False.
+            txt_feats (torch.Tensor): The text features, use it if it's given. Defaults to None.
             augment (bool, optional): If True, perform data augmentation during inference. Defaults to False.
             embed (list, optional): A list of feature vectors/embeddings to return.
 
         Returns:
             (torch.Tensor): Model's output tensor.
         """
-        txt_feats = self.txt_feats.to(device=x.device, dtype=x.dtype)
+        txt_feats = (self.txt_feats if txt_feats is None else txt_feats).to(device=x.device, dtype=x.dtype)
         if len(txt_feats) != len(x):
             txt_feats = txt_feats.repeat(len(x), 1, 1)
         ori_txt_feats = txt_feats.clone()
@@ -617,6 +624,21 @@ class WorldModel(DetectionModel):
                 if m.i == max(embed):
                     return torch.unbind(torch.cat(embeddings, 1), dim=0)
         return x
+
+    def loss(self, batch, preds=None):
+        """
+        Compute loss.
+
+        Args:
+            batch (dict): Batch to compute loss on.
+            preds (torch.Tensor | List[torch.Tensor]): Predictions.
+        """
+        if not hasattr(self, "criterion"):
+            self.criterion = self.init_criterion()
+
+        if preds is None:
+            preds = self.forward(batch["img"], txt_feats=batch["txt_feats"])
+        return self.criterion(preds, batch)
 
 
 class Ensemble(nn.ModuleList):
@@ -897,12 +919,12 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 )  # num heads
 
             args = [c1, c2, *args[1:]]
-            if m in (BottleneckCSP, C1, C2, C2f, C2fAttn, C3, C3TR, C3Ghost, C3x, RepC3):
+            if m in {BottleneckCSP, C1, C2, C2f, C2fAttn, C3, C3TR, C3Ghost, C3x, RepC3}:
                 args.insert(2, n)  # number of repeats
                 n = 1
         elif m is AIFI:
             args = [ch[f], *args]
-        elif m in (HGStem, HGBlock):
+        elif m in {HGStem, HGBlock}:
             c1, cm, c2 = ch[f], args[0], args[1]
             args = [c1, cm, c2, *args[2:]]
             if m is HGBlock:
