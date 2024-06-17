@@ -46,6 +46,7 @@ from .block import (
     CBFuse,
     CBLinear,
     Silence,
+    RepBottleneck,
 )
 from .conv import (
     CBAM,
@@ -135,6 +136,7 @@ __all__ = (
     "CBFuse",
     "CBLinear",
     "Silence",
+    "RepBottleneck"
 )
 
 from .custom import (Groups, GroupsF, Shortcut, ResidualBlock, ResidualBlocks, SEBlock, EfficientBlock, PoolResidualBlock,
@@ -145,7 +147,8 @@ from .custom import (Groups, GroupsF, Shortcut, ResidualBlock, ResidualBlocks, S
                      ResidualBlocks2, CSPDWResidualBlocks, CSPDWResidualBlocks2, DetectorTiny, DWResidualBlock3, DWResidualBlocks3,
                      DetectorTinyv2, CSPDWResidualBlocks3, DetectorTinyv3, C2Tiny, C2Aug, DetectorTinyv4, C2TinyF, C2AugF, FireModule,
                      FireC2, FireC3, DetectorPrototype, DetectorTinyv5, DetectorTinyv6, ResidualBlock3, ResidualBlocks3,
-                     EfficientBlocks, DetectorPrototype2, AuxiliaryShortcut, DetectorPrototype3, DetectorPrototype4
+                     EfficientBlocks, DetectorPrototype2, AuxiliaryShortcut, DetectorPrototype3, DetectorPrototype4, NDetectAux, NDetectAuxDual,
+                     RepC2f, NDetect, RELAN
                      )
 
 __all__ = list(__all__) + [
@@ -157,4 +160,5 @@ __all__ = list(__all__) + [
             'ResidualBlocks2', 'CSPDWResidualBlocks', 'CSPDWResidualBlocks2', 'DetectorTiny', 'DWResidualBlock3', 'DWResidualBlocks3',
             'DetectorTinyv2', 'CSPDWResidualBlocks3', 'DetectorTinyv3', 'C2Tiny', 'C2Aug', 'DetectorTinyv4', 'C2TinyF', 'C2AugF', 'FireModule',
             'FireC2', 'FireC3', 'DetectorPrototype', 'DetectorTinyv5', 'DetectorTinyv6', 'ResidualBlocks3', 'ResidualBlock3',
-            'EfficientBlocks', 'DetectorPrototype2', 'AuxiliaryShortcut', 'DetectorPrototype3', 'DetectorPrototype4']
+            'EfficientBlocks', 'DetectorPrototype2', 'AuxiliaryShortcut', 'DetectorPrototype3', 'DetectorPrototype4', 'NDetectAux', 'NDetectAuxDual',
+            "RepC2f", "NDetect", "RELAN"]

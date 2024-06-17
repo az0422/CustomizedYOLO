@@ -12,7 +12,7 @@ import torch.nn as nn
 from ultralytics.nn.modules import *
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
-from ultralytics.utils.loss import v8ClassificationLoss, v8DetectionLoss, v8OBBLoss, v8PoseLoss, v8SegmentationLoss
+from ultralytics.utils.loss import v8ClassificationLoss, v8DetectionLoss, v8OBBLoss, v8PoseLoss, v8SegmentationLoss, v8DetectionLossAux, v8DetectionLossAuxDual
 from ultralytics.utils.plotting import feature_visualization
 from ultralytics.utils.torch_utils import (
     fuse_conv_and_bn,
@@ -33,9 +33,9 @@ except ImportError:
 print("%d\b \b" % math.gcd(1, 1), end="") # prevent import ommitting
 
 CUSTOM_DETECTOR = (DetectorTiny, DetectorTinyv2, DetectorTinyv3, DetectorTinyv4, DetectorPrototype, DetectorTinyv5, DetectorTinyv6, DetectorPrototype2, DetectorPrototype3,
-                   DetectorPrototype4)
+                   DetectorPrototype4, NDetectAux, NDetectAuxDual, NDetect)
 CUSTOM_DETECTOR_STR = ('detectortiny', 'detectortinyv2', 'detectortinyv3', 'detectortinyv4', 'detectorprototype', 'detectortinyv5', 'detectortinyv6', 'detectorprototype2', 
-                       'detectorprototype3', 'detectorprototype4')
+                       'detectorprototype3', 'detectorprototype4', 'ndetectaux', 'ndetectauxdual', 'ndetect')
 
 class BaseModel(nn.Module):
     """The BaseModel class serves as a base class for all the models in the Ultralytics YOLO family."""
@@ -159,6 +159,9 @@ class BaseModel(nn.Module):
                     m.forward = m.forward_fuse  # update forward
                 if isinstance(m, AuxiliaryShortcut):
                     m.forward = m.forward_fuse
+                if isinstance(m, (NDetectAux, NDetectAuxDual)):
+                    m.del_attr()
+                    m.forward = m.forward_fuse
             self.info(verbose=verbose)
 
         return self
@@ -270,6 +273,11 @@ class DetectionModel(BaseModel):
             m.bias_init()  # only run once
         else:
             self.stride = torch.Tensor([32])  # default stride for i.e. RTDETR
+        
+        if isinstance(m, NDetectAux):
+            self.init_criterion = self.init_criterion_aux
+        elif isinstance(m, NDetectAuxDual):
+            self.init_criterion = self.init_criterion_aux_dual
 
         # Init weights, biases
         initialize_weights(self)
@@ -312,10 +320,24 @@ class DetectionModel(BaseModel):
         i = (y[-1].shape[-1] // g) * sum(4 ** (nl - 1 - x) for x in range(e))  # indices
         y[-1] = y[-1][..., i:]  # small
         return y
-
+    
     def init_criterion(self):
         """Initialize the loss criterion for the DetectionModel."""
         return v8DetectionLoss(self)
+    
+    def init_criterion_aux(self):
+        return v8DetectionLossAux(self)
+    
+    def init_criterion_aux_dual(self):
+        return v8DetectionLossAuxDual(self)
+    
+    def fuse(self, verbose=True):
+        super().fuse(verbose)
+
+        if isinstance(self.model[-1], (NDetectAux, NDetectAuxDual)):
+            self.criterion = v8DetectionLoss(self)
+        
+        return self
 
 
 class OBBModel(DetectionModel):
@@ -923,7 +945,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                    ResNextBlock, ResNextBlocks, ResidualBlock2, ResidualBlocks2, CSPDWResidualBlocks,
                    CSPDWResidualBlocks2, DWResidualBlocks3, DWResidualBlock3, CSPDWResidualBlocks3,
                    C2Tiny, C2Aug, C2TinyF, C2AugF, FireModule, FireC2, FireC3, ResidualBlock3, 
-                   ResidualBlocks3, EfficientBlocks):
+                   ResidualBlocks3, EfficientBlocks, RepC2f, RELAN):
             
             c1, c2 = ch[f], args[0]
             
@@ -941,7 +963,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                      CSPResidualBlocks, DWResidualBlocks, FuseResidualBlocks,
                      DWResidualBlocks2, ResNextBlocks, CSPDWResidualBlocks, CSPDWResidualBlocks2,
                      DWResidualBlocks3, CSPDWResidualBlocks3, C2Tiny, C2Aug, C2TinyF, C2AugF, FireC2, FireC3,
-                     ResidualBlocks3, EfficientBlocks):
+                     ResidualBlocks3, EfficientBlocks, RepC2f, RELAN):
                 args.insert(2, n)
                 n = 1
         elif m is CBLinear:
