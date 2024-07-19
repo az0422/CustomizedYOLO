@@ -28,6 +28,35 @@ class GroupsF(nn.Module):
 
         return x[:, chunk_index_start : chunk_index_end]
 
+class ShuffleConv(nn.Module):
+    def __init__(self, c1, c2, k=3, s=1):
+        super().__init__()
+        assert c1 == c2 or c1 == c2 // 2, "c1 and c2 should be c1 == c2 or c1 == c2 // 2"
+        self.flag = c1 == c2
+        self.c_in = c1 // 2 if self.flag else c1
+        c_out = c1 // 2 if self.flag else c1
+
+        self.conv1 = Conv(c1, c1, 1, 1)
+        self.conv2 = Conv(c1, c1, 1, 1)
+        self.conv3 = Conv(self.c_in, c_out, k, s)
+        self.mp = nn.MaxPool2d(k, s, k // 2)
+    
+    def forward(self, x):
+        if self.flag:
+            x1, x2 = self.conv1(x).split((self.c_in, self.c_in), 1)
+        else:
+            x1, x2 = self.conv1(x), self.conv2(x)
+
+        y1, y2 = self.conv3(x1), self.mp(x2)
+
+        batch, channels, height, width = y1.shape
+
+        result = torch.empty([batch, channels << 1, height, width], device=y1.device)
+        result[:, ::2] = y1
+        result[:, 1::2] = y2
+
+        return result
+
 class Shortcut(nn.Module):
     def __init__(self):
         super().__init__()
