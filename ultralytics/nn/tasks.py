@@ -7,12 +7,19 @@ import math
 
 import torch
 import torch.nn as nn
-
-
 from ultralytics.nn.modules import *
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
-from ultralytics.utils.loss import v8ClassificationLoss, v8DetectionLoss, v8OBBLoss, v8PoseLoss, v8SegmentationLoss, v8DetectionLossAux, v8DetectionLossAuxDual
+from ultralytics.utils.loss import (
+    E2EDetectLoss,
+    v8ClassificationLoss,
+    v8DetectionLoss,
+    v8OBBLoss,
+    v8PoseLoss,
+    v8SegmentationLoss,
+    v8DetectionLossAux,
+    v8DetectionLossAuxDual
+)
 from ultralytics.utils.plotting import feature_visualization
 from ultralytics.utils.torch_utils import (
     fuse_conv_and_bn,
@@ -104,8 +111,8 @@ class BaseModel(nn.Module):
     def _predict_augment(self, x):
         """Perform augmentations on input image x and return augmented inference."""
         LOGGER.warning(
-            f"WARNING ⚠️ {self.__class__.__name__} does not support augmented inference yet. "
-            f"Reverting to single-scale inference instead."
+            f"WARNING ⚠️ {self.__class__.__name__} does not support 'augment=True' prediction. "
+            f"Reverting to single-scale prediction."
         )
         return self._predict_once(x)
 
@@ -157,6 +164,9 @@ class BaseModel(nn.Module):
                 if isinstance(m, RepConv):
                     m.fuse_convs()
                     m.forward = m.forward_fuse  # update forward
+                if isinstance(m, RepVGGDW):
+                    m.fuse()
+                    m.forward = m.forward_fuse
                 if isinstance(m, AuxiliaryShortcut):
                     m.forward = m.forward_fuse
                 if isinstance(m, (NDetectAux, NDetectAuxDual)):
@@ -233,7 +243,7 @@ class BaseModel(nn.Module):
             batch (dict): Batch to compute loss on
             preds (torch.Tensor | List[torch.Tensor]): Predictions.
         """
-        if not hasattr(self, "criterion"):
+        if getattr(self, "criterion", None) is None:
             self.criterion = self.init_criterion()
 
         preds = self.forward(batch["img"]) if preds is None else preds
@@ -251,6 +261,12 @@ class DetectionModel(BaseModel):
         """Initialize the YOLOv8 detection model with the given config and parameters."""
         super().__init__()
         self.yaml = cfg if isinstance(cfg, dict) else yaml_model_load(cfg)  # cfg dict
+        if self.yaml["backbone"][0][2] == "Silence":
+            LOGGER.warning(
+                "WARNING ⚠️ YOLOv9 `Silence` module is deprecated in favor of nn.Identity. "
+                "Please delete local *.pt file and re-download the latest model checkpoint."
+            )
+            self.yaml["backbone"][0][2] = "nn.Identity"
 
         # Define model
         ch = self.yaml["ch"] = self.yaml.get("ch", ch)  # input channels
@@ -260,6 +276,7 @@ class DetectionModel(BaseModel):
         self.model, self.save = parse_model(deepcopy(self.yaml), ch=ch, verbose=verbose)  # model, savelist
         self.names = {i: f"{i}" for i in range(self.yaml["nc"])}  # default names dict
         self.inplace = self.yaml.get("inplace", True)
+        self.end2end = getattr(self.model[-1], "end2end", False)
 
         # Build strides
         m = self.model[-1]  # Detect()
@@ -270,6 +287,8 @@ class DetectionModel(BaseModel):
 
             def _forward(x):
                 """Performs a forward pass through the model, handling different Detect subclass types accordingly."""
+                if self.end2end:
+                    return self.forward(x)["one2many"]
                 return self.forward(x)[0] if isinstance(m, (Segment, Pose, OBB)) else self.forward(x)
 
             m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch, s, s))])  # forward
@@ -291,6 +310,12 @@ class DetectionModel(BaseModel):
 
     def _predict_augment(self, x):
         """Perform augmentations on input image x and return augmented inference and train outputs."""
+        if getattr(self, "end2end", False):
+            LOGGER.warning(
+                "WARNING ⚠️ End2End model does not support 'augment=True' prediction. "
+                "Reverting to single-scale prediction."
+            )
+            return self._predict_once(x)
         img_size = x.shape[-2:]  # height, width
         s = [1, 0.83, 0.67]  # scales
         f = [None, 3, None]  # flips (2-ud, 3-lr)
@@ -327,7 +352,7 @@ class DetectionModel(BaseModel):
     
     def init_criterion(self):
         """Initialize the loss criterion for the DetectionModel."""
-        return v8DetectionLoss(self)
+        return E2EDetectLoss(self) if getattr(self, "end2end", False) else v8DetectionLoss(self)
     
     def init_criterion_aux(self):
         return v8DetectionLossAux(self)
@@ -340,9 +365,7 @@ class DetectionModel(BaseModel):
 
         if isinstance(self.model[-1], (NDetectAux, NDetectAuxDual)):
             self.criterion = v8DetectionLoss(self)
-        
         return self
-
 
 class OBBModel(DetectionModel):
     """YOLOv8 Oriented Bounding Box (OBB) model."""
@@ -661,7 +684,7 @@ class Ensemble(nn.ModuleList):
 
 
 @contextlib.contextmanager
-def temporary_modules(modules=None):
+def temporary_modules(modules=None, attributes=None):
     """
     Context manager for temporarily adding or modifying modules in Python's module cache (`sys.modules`).
 
@@ -671,11 +694,13 @@ def temporary_modules(modules=None):
 
     Args:
         modules (dict, optional): A dictionary mapping old module paths to new module paths.
+        attributes (dict, optional): A dictionary mapping old module attributes to new module attributes.
 
     Example:
         ```python
-        with temporary_modules({'old.module.path': 'new.module.path'}):
-            import old.module.path  # this will now import new.module.path
+        with temporary_modules({'old.module': 'new.module'}, {'old.module.attribute': 'new.module.attribute'}):
+            import old.module  # this will now import new.module
+            from old.module import attribute  # this will now import new.module.attribute
         ```
 
     Note:
@@ -683,16 +708,24 @@ def temporary_modules(modules=None):
         Be aware that directly manipulating `sys.modules` can lead to unpredictable results, especially in larger
         applications or libraries. Use this function with caution.
     """
-    if not modules:
-        modules = {}
 
-    import importlib
+    if modules is None:
+        modules = {}
+    if attributes is None:
+        attributes = {}
     import sys
+    from importlib import import_module
 
     try:
+        # Set attributes in sys.modules under their old name
+        for old, new in attributes.items():
+            old_module, old_attr = old.rsplit(".", 1)
+            new_module, new_attr = new.rsplit(".", 1)
+            setattr(import_module(old_module), old_attr, getattr(import_module(new_module), new_attr))
+
         # Set modules in sys.modules under their old name
         for old, new in modules.items():
-            sys.modules[old] = importlib.import_module(new)
+            sys.modules[old] = import_module(new)
 
         yield
     finally:
@@ -729,12 +762,16 @@ def torch_safe_load(weight):
     
     try:
         with temporary_modules(
-            {
+            modules={
                 "ultralytics.yolo.utils": "ultralytics.utils",
                 "ultralytics.yolo.v8": "ultralytics.models.yolo",
                 "ultralytics.yolo.data": "ultralytics.data",
-            }
-        ):  # for legacy 8.0 Classify and Pose models
+            },
+            attributes={
+                "ultralytics.nn.modules.block.Silence": "torch.nn.Identity",  # YOLOv9e
+                "ultralytics.nn.tasks.YOLOv10DetectionModel": "ultralytics.nn.tasks.DetectionModel",  # YOLOv10
+            },
+        ):
             ckpt = torch.load(file, map_location="cpu")
 
     except ModuleNotFoundError as e:  # e.name is missing module name
@@ -745,14 +782,14 @@ def torch_safe_load(weight):
                     f"with https://github.com/ultralytics/yolov5.\nThis model is NOT forwards compatible with "
                     f"YOLOv8 at https://github.com/ultralytics/ultralytics."
                     f"\nRecommend fixes are to train a new model using the latest 'ultralytics' package or to "
-                    f"run a command with an official YOLOv8 model, i.e. 'yolo predict model=yolov8n.pt'"
+                    f"run a command with an official Ultralytics model, i.e. 'yolo predict model=yolov8n.pt'"
                 )
             ) from e
         LOGGER.warning(
-            f"WARNING ⚠️ {weight} appears to require '{e.name}', which is not in ultralytics requirements."
+            f"WARNING ⚠️ {weight} appears to require '{e.name}', which is not in Ultralytics requirements."
             f"\nAutoInstall will run now for '{e.name}' but this feature will be removed in the future."
             f"\nRecommend fixes are to train a new model using the latest 'ultralytics' package or to "
-            f"run a command with an official YOLOv8 model, i.e. 'yolo predict model=yolov8n.pt'"
+            f"run a command with an official Ultralytics model, i.e. 'yolo predict model=yolov8n.pt'"
         )
         check_requirements(e.name)  # install missing module
         ckpt = torch.load(file, map_location="cpu")
@@ -891,7 +928,9 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2,
             C2f,
             RepNCSPELAN4,
+            ELAN1,
             ADown,
+            AConv,
             SPPELAN,
             C2fAttn,
             C3,
@@ -902,7 +941,10 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C3x,
             RepC3,
             RepConv,
-            nn.Conv2d
+            nn.Conv2d,
+            PSA,
+            SCDown,
+            C2fCIB,
         ):
             c1, c2 = ch[f], args[0]
             if type(c2) is str:
@@ -919,7 +961,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 )  # num heads
 
             args = [c1, c2, *args[1:]]
-            if m in {BottleneckCSP, C1, C2, C2f, C2fAttn, C3, C3TR, C3Ghost, C3x, RepC3}:
+            if m in {BottleneckCSP, C1, C2, C2f, C2fAttn, C3, C3TR, C3Ghost, C3x, RepC3, C2fCIB}:
                 args.insert(2, n)  # number of repeats
                 n = 1
         elif m is AIFI:
@@ -936,8 +978,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             args = [ch[f]]
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
-        elif m in (Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn) + CUSTOM_DETECTOR:
-
+        elif m in (Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect) + CUSTOM_DETECTOR:
             args.append([ch[x] for x in f])
             if m is Segment:
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
@@ -1066,15 +1107,15 @@ def guess_model_task(model):
 
     def cfg2task(cfg):
         """Guess from YAML dictionary."""
-        m = cfg['head'][-1][-2].lower()  # output module name
-        if m in ('classify', 'classifier', 'cls', 'fc'):
-            return 'classify'
-        if m in ('detect', ) + CUSTOM_DETECTOR_STR:
-            return 'detect'
-        if m == 'segment':
-            return 'segment'
-        if m == 'pose':
-            return 'pose'
+        m = cfg["head"][-1][-2].lower()  # output module name
+        if m in {"classify", "classifier", "cls", "fc"}:
+            return "classify"
+        if m in  (detect,) + CUSTOM_DETECTOR_STR:
+            return "detect"
+        if m == "segment":
+            return "segment"
+        if m == "pose":
+            return "pose"
         if m == "obb":
             return "obb"
         
@@ -1101,7 +1142,7 @@ def guess_model_task(model):
                 return 'pose'
             elif isinstance(m, OBB):
                 return "obb"
-            elif isinstance(m, (Detect, WorldDetect)):
+            elif isinstance(m, (Detect, WorldDetect, v10Detect)):
                 return "detect"
             
             for detector in CUSTOM_DETECTOR:
